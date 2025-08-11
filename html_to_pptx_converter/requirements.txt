@@ -1,0 +1,6 @@
+python-pptx
+selenium
+webdriver-manager
+beautifulsoup4
+lxml
+pillow
