@@ -14,15 +14,6 @@ import argparse
 import shutil
 import re
 
-class SlideData:
-    def __init__(self):
-        self.background_image_path = None
-        self.title_text = None
-        self.title_geom = None
-        self.subtitle_text = None
-        self.subtitle_geom = None
-        self.keyword_items = []
-
 # --- New Data Structures ---
 class ElementData:
     """Represents a generic element extracted from HTML."""
@@ -32,6 +23,7 @@ class ElementData:
         self.text = None
         self.geom = None
         self.icon_path = None
+        self.element_screenshot_path = None # 新增：用于存储元素截图的路径
         self.children = []
 
 class SlideData:
@@ -57,18 +49,38 @@ FULL_WIDTH_CLASSES = {'title', 'subtitle', 'section-title', 'p-full-width'}
 
 # --- Selenium and Parsing Logic ---
 
+def parse_color(color_str):
+    """解析CSS颜色字符串 (rgb, rgba) 并返回一个元组 (r, g, b, a)。"""
+    if not color_str or color_str in ['transparent', 'inherit', 'initial', 'unset']:
+        return (0, 0, 0, 0)
+    try:
+        # 查找字符串中的所有数字
+        parts = re.findall(r'[\d.]+', color_str)
+        r, g, b = int(parts[0]), int(parts[1]), int(parts[2])
+        a = float(parts[3]) if len(parts) > 3 else 1.0
+        return (r, g, b, a)
+    except (IndexError, ValueError):
+        return (0, 0, 0, 0) # 解析错误时默认为透明黑色
+
 def init_driver():
     """Initializes the Selenium WebDriver."""
     options = webdriver.ChromeOptions()
-    options.add_argument("--headless")
     options.add_argument("--window-size=1280,720")
     options.add_argument("--hide-scrollbars")
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=options)
     return driver
 
-def take_icon_screenshot(driver, icon_element, temp_dir, slide_index, element_index):
+def take_icon_screenshot(driver, icon_element, temp_dir, slide_index, element_index, slide_element=None):
     """Takes a high-resolution, cropped screenshot of an icon element."""
+    # 在截图前先将slide_element向下移动1000px，防止内容干扰
+    if slide_element:
+        try:
+            driver.execute_script("arguments[0].style.transform = 'translateY(1000px)';", slide_element)
+            time.sleep(0.1)  # 等待移动完成
+        except Exception as e:
+            logging.warning(f"无法移动slide元素: {e}")
+    
     scale_factor = 5
     js_script = """
         const targetElement = arguments[0];
@@ -95,9 +107,17 @@ def take_icon_screenshot(driver, icon_element, temp_dir, slide_index, element_in
     scaled_clone_element = driver.execute_script(js_script, icon_element, scale_factor)
     if not scaled_clone_element:
         logging.warning(f"Could not create a scalable clone for icon on slide {slide_index}.")
+        # 恢复slide_element位置
+        if slide_element:
+            try:
+                driver.execute_script("arguments[0].style.transform = '';", slide_element)
+            except Exception:
+                pass
         return None
 
     time.sleep(0.1)
+    print("Paused before icon screenshot. Press enter to continue...")
+    input()
     icon_path = os.path.join(temp_dir, f"slide_{slide_index}_element_{element_index}_icon.png")
     try:
         scaled_clone_element.screenshot(icon_path)
@@ -112,18 +132,23 @@ def take_icon_screenshot(driver, icon_element, temp_dir, slide_index, element_in
         return None
     finally:
         driver.execute_script("document.getElementById('temp-icon-container-for-screenshot').remove();")
+        # 恢复slide_element位置
+        if slide_element:
+            try:
+                driver.execute_script("arguments[0].style.transform = '';", slide_element)
+            except Exception as e:
+                logging.warning(f"无法恢复slide元素位置: {e}")
 
-def parse_element_recursively(driver, element, temp_dir, slide_index, element_counter):
+def parse_element_recursively(driver, element, temp_dir, slide_index, element_counter, parent_bg_color=None, slide_element=None):
     """Recursively parses an element and its children to extract data."""
     data = ElementData()
     try:
         data.tag_name = element.tag_name
         data.classes = element.get_attribute('class').split()
     except Exception:
-        # This can happen if the element becomes stale
         return None
 
-    # Get geometry and style for all elements
+    # Get geometry and style for all elements first.
     try:
         location = element.location
         size = element.size
@@ -136,34 +161,19 @@ def parse_element_recursively(driver, element, temp_dir, slide_index, element_co
             "color": element.value_of_css_property('color'),
             "font-weight": element.value_of_css_property('font-weight'),
             "text-align": element.value_of_css_property('text-align'),
+            'background-color': element.value_of_css_property('background-color')
         }
     except Exception:
         return None # Element is not visible or interactable
 
-    # Check if the element is an icon
+    # Check if the element is an icon. Icons are leaf nodes.
     if any(cls in ICON_CLASSES for cls in data.classes):
-        data.icon_path = take_icon_screenshot(driver, element, temp_dir, slide_index, element_counter['i'])
-        # Icons are considered leaf nodes, don't process children or text
+        data.icon_path = take_icon_screenshot(driver, element, temp_dir, slide_index, element_counter['i'], slide_element)
         return data
 
-    # Get geometry and style for all elements
-    try:
-        location = element.location
-        size = element.size
-        if size['width'] == 0 or size['height'] == 0: # Skip invisible elements
-             return None
-        data.geom = {
-            "x": location['x'], "y": location['y'],
-            "width": size['width'], "height": size['height'],
-            "font-size": element.value_of_css_property('font-size'),
-            "color": element.value_of_css_property('color'),
-            "font-weight": element.value_of_css_property('font-weight'),
-            "text-align": element.value_of_css_property('text-align'),
-        }
-    except Exception:
-        return None # Element is not visible or interactable
+    # --- Reordered Logic ---
 
-    # Extract text that belongs directly to this element, not its children
+    # 1. Extract text and find children BEFORE potential DOM modification
     try:
         js_get_text = "return Array.from(arguments[0].childNodes).filter(node => node.nodeType === 3 && node.nodeValue.trim() !== '').map(node => node.nodeValue.trim()).join(' ')"
         text = driver.execute_script(js_get_text, element)
@@ -172,24 +182,70 @@ def parse_element_recursively(driver, element, temp_dir, slide_index, element_co
     except Exception as e:
         logging.warning(f"Could not extract text from element: {e}")
 
-    # Recursively parse children
     child_elements = element.find_elements(By.XPATH, "./*")
+
+    # 2. Now, handle the background screenshot using the safe clone method
+    try:
+        bg_color_str = data.geom.get('background-color')
+        bg_color = parse_color(bg_color_str)
+    except Exception:
+        bg_color = (0, 0, 0, 0)
+
+    is_new_background = bg_color[3] > 0 and bg_color != parent_bg_color
+    if is_new_background:
+        element_path = os.path.join(temp_dir, f"slide_{slide_index}_element_{element_counter['i']}_bg.png")
+        try:
+            print("Paused before element background screenshot. Press enter to continue...")
+            input()
+            element.screenshot(element_path)
+            data.element_screenshot_path = element_path
+        except Exception as e:
+            logging.warning(f"Could not take element background screenshot for slide {slide_index}: {e}")
+
+    # 3. Recursively parse the children we found earlier
+    current_bg_for_children = bg_color if is_new_background else parent_bg_color
     for child_element in child_elements:
         element_counter['i'] += 1
-        child_data = parse_element_recursively(driver, child_element, temp_dir, slide_index, element_counter)
+        child_data = parse_element_recursively(driver, child_element, temp_dir, slide_index, element_counter, parent_bg_color=current_bg_for_children, slide_element=slide_element)
         if child_data:
             data.children.append(child_data)
-            
-    # Pruning: if an element has no text, no icon, and no children with content, it's not useful
-    if not data.text and not data.icon_path and not data.children:
+
+    # Pruning
+    if not data.text and not data.icon_path and not data.element_screenshot_path and not data.children:
         return None
 
     return data
+
+def wait_for_material_icons(driver, timeout=10):
+    """等待Material Icons字体加载完成"""
+    js_script = """
+        return new Promise((resolve) => {
+            if (document.fonts && document.fonts.ready) {
+                document.fonts.ready.then(() => {
+                    // 额外等待一下确保material-icons完全加载
+                    setTimeout(() => resolve(true), 500);
+                });
+            } else {
+                // 如果不支持document.fonts API，则等待固定时间
+                setTimeout(() => resolve(true), 2000);
+            }
+        });
+    """
+    
+    try:
+        driver.set_script_timeout(timeout)
+        driver.execute_async_script(js_script)
+        logging.info("Material Icons字体加载完成")
+    except Exception as e:
+        logging.warning(f"等待Material Icons加载时出错: {e}，继续执行")
 
 def extract_data_from_html(driver, file_path, temp_dir):
     """Extracts structured data from all slides in the HTML file using a pre-initialized driver."""
     driver.get(f"file:///{os.path.abspath(file_path)}")
     time.sleep(2) # Allow time for rendering
+    
+    # 等待Material Icons字体加载完成
+    wait_for_material_icons(driver)
 
     slides_data = []
     slide_elements = driver.find_elements(By.CSS_SELECTOR, ".slide")
@@ -200,51 +256,18 @@ def extract_data_from_html(driver, file_path, temp_dir):
         slide_data = SlideData()
         element_counter = {'i': 0} # Use a mutable dict for a counter
 
-        # 1. Take background screenshot by temporarily hiding text
-        original_html = driver.execute_script("return arguments[0].innerHTML;", slide_element)
+        # 1. Take background screenshot
+        screenshot_path = os.path.join(temp_dir, f"slide_{i}_bg.png")
         try:
-            # This JS finds all non-empty text nodes and wraps them in a temporary, hidden span.
-            # This is safer than string manipulation of the innerHTML.
-            driver.execute_script("""
-                const element = arguments[0];
-                const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
-                let node;
-                while(node = walker.nextNode()) {
-                    if (node.nodeValue.trim() !== '') {
-                        const span = document.createElement('span');
-                        // Using visibility:hidden keeps the layout intact, unlike display:none
-                        span.style.visibility = 'hidden';
-                        node.parentNode.insertBefore(span, node);
-                        span.appendChild(node);
-                    }
-                }
-            """, slide_element)
-            
-            time.sleep(0.2) # Allow re-render
-
-            screenshot_path = os.path.join(temp_dir, f"slide_{i}_bg.png")
+            print("Paused before slide background screenshot. Press enter to continue...")
+            input()
             slide_element.screenshot(screenshot_path)
             slide_data.background_image_path = screenshot_path
-            logging.info(f"Took background screenshot for slide {i+1} with text hidden.")
-
-        except Exception as e:
-            logging.warning(f"Could not take background screenshot for slide {i+1} with text hidden: {e}. A full screenshot will be attempted after restoring HTML.")
-            # Fallback screenshot will happen after HTML is restored.
-        finally:
-            # Restore original HTML to ensure all elements are available for parsing.
-            driver.execute_script("arguments[0].innerHTML = arguments[1];", slide_element, original_html)
-            time.sleep(0.1) # Allow re-render
+            logging.info(f"Took background screenshot for slide {i+1}.")
             
-            # If the background path is still not set, it means the try block failed.
-            # Take a screenshot of the restored slide as a fallback.
-            if not slide_data.background_image_path:
-                try:
-                    logging.info(f"Taking fallback full screenshot for slide {i+1}.")
-                    screenshot_path = os.path.join(temp_dir, f"slide_{i}_bg.png")
-                    slide_element.screenshot(screenshot_path)
-                    slide_data.background_image_path = screenshot_path
-                except Exception as e_fallback:
-                    logging.error(f"Could not take any background screenshot for slide {i+1}: {e_fallback}")
+        except Exception as e:
+            # 如果出错，确保将slide移回原位置
+            logging.error(f"Could not take background screenshot for slide {i+1}: {e}")
 
         # 2. Recursively parse content
         try:
@@ -258,7 +281,7 @@ def extract_data_from_html(driver, file_path, temp_dir):
             child_elements = content_element.find_elements(By.XPATH, "./*")
             for child in child_elements:
                 element_counter['i'] += 1
-                element_data = parse_element_recursively(driver, child, temp_dir, i, element_counter)
+                element_data = parse_element_recursively(driver, child, temp_dir, i, element_counter, slide_element=slide_element)
                 if element_data:
                     slide_data.elements.append(element_data)
         except Exception as e:
@@ -369,13 +392,17 @@ def add_textbox(slide, data, slide_width_px):
 def add_elements_to_slide(slide, elements, slide_width_px):
     """Recursively adds elements from ElementData to the slide."""
     for data in elements:
-        # Add the element itself
+        # 1. 如果有背景截图，先添加背景
+        if data.element_screenshot_path:
+            add_image(slide, data.element_screenshot_path, data.geom)
+
+        # 2. 添加元素本身的内容（图标或文本）
         if data.icon_path:
             add_image(slide, data.icon_path, data.geom)
         elif data.text:
             add_textbox(slide, data, slide_width_px)
 
-        # Add its children
+        # 3. 递归添加子元素
         if data.children:
             add_elements_to_slide(slide, data.children, slide_width_px)
 
