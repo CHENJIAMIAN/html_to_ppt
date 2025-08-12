@@ -67,6 +67,7 @@ def init_driver():
     options = webdriver.ChromeOptions()
     options.add_argument("--window-size=1280,720")
     options.add_argument("--hide-scrollbars")
+    options.add_argument('--headless')  # 添加无头模式
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=options)
     return driver
@@ -117,7 +118,7 @@ def take_icon_screenshot(driver, icon_element, temp_dir, slide_index, element_in
 
     time.sleep(0.1)
     print("Paused before icon screenshot. Press enter to continue...")
-    input()
+    # input()
     icon_path = os.path.join(temp_dir, f"slide_{slide_index}_element_{element_index}_icon.png")
     try:
         scaled_clone_element.screenshot(icon_path)
@@ -196,10 +197,111 @@ def parse_element_recursively(driver, element, temp_dir, slide_index, element_co
         element_path = os.path.join(temp_dir, f"slide_{slide_index}_element_{element_counter['i']}_bg.png")
         try:
             print("Paused before element background screenshot. Press enter to continue...")
-            input()
+            # input()
+            
+            # 隐藏element下的所有一级子元素
+            child_elements_to_hide = element.find_elements(By.XPATH, "./*")
+            original_styles = []
+            original_texts = []  # 新增：保存原始文本内容
+            for child in child_elements_to_hide:
+                try:
+                    # 保存原始样式
+                    original_style = driver.execute_script("return arguments[0].style.display;", child)
+                    original_styles.append((child, original_style))
+                    # 隐藏元素
+                    driver.execute_script("arguments[0].style.display = 'none';", child)
+                except Exception as e:
+                    logging.warning(f"无法隐藏子元素: {e}")
+                    original_styles.append((child, None))
+            
+            # 新增：将当前元素的直接文本内容替换为等宽度空白字符
+            try:
+                # 保存原始文本内容并替换为空白字符
+                original_text = driver.execute_script("""
+                    var element = arguments[0];
+                    var textNodes = [];
+                    for (var i = 0; i < element.childNodes.length; i++) {
+                        if (element.childNodes[i].nodeType === 3) { // TEXT_NODE
+                            var originalText = element.childNodes[i].textContent;
+                            textNodes.push(originalText);
+                            // 将文本替换为相同长度的空白字符（使用全角空格保持宽度）
+                            var spaceText = '\u3000'.repeat(originalText.length);
+                            element.childNodes[i].textContent = spaceText;
+                        }
+                    }
+                    return textNodes;
+                """, element)
+                original_texts.append((element, original_text))
+            except Exception as e:
+                logging.warning(f"无法替换元素文本: {e}")
+                original_texts.append((element, []))
+            
+            # 等待页面重新渲染
+            time.sleep(0.5)
+            
+            # 截图
             element.screenshot(element_path)
             data.element_screenshot_path = element_path
+            
+            # 恢复所有一级子元素的显示状态
+            for child, original_style in original_styles:
+                try:
+                    if original_style:
+                        driver.execute_script("arguments[0].style.display = arguments[1];", child, original_style)
+                    else:
+                        driver.execute_script("arguments[0].style.display = '';", child)
+                except Exception:
+                    logging.warning(f"无法恢复子元素显示状态: {e}")
+            
+            # 新增：恢复原始文本内容
+            for elem, text_list in original_texts:
+                try:
+                    driver.execute_script("""
+                        var element = arguments[0];
+                        var textList = arguments[1];
+                        var textNodeIndex = 0;
+                        for (var i = 0; i < element.childNodes.length; i++) {
+                            if (element.childNodes[i].nodeType === 3 && textNodeIndex < textList.length) { // TEXT_NODE
+                                element.childNodes[i].textContent = textList[textNodeIndex];
+                                textNodeIndex++;
+                            }
+                        }
+                    """, elem, text_list)
+                except Exception:
+                    logging.warning(f"无法恢复元素文本: {e}")
+            
+            # 等待页面恢复渲染
+            time.sleep(0.2)
+                    
         except Exception as e:
+            # 如果出错，确保恢复所有一级子元素的显示状态和文本内容
+            try:
+                for child, original_style in original_styles:
+                    try:
+                        if original_style:
+                            driver.execute_script("arguments[0].style.display = arguments[1];", child, original_style)
+                        else:
+                            driver.execute_script("arguments[0].style.display = '';", child)
+                    except Exception:
+                        pass
+                # 恢复文本内容
+                for elem, text_list in original_texts:
+                    try:
+                        driver.execute_script("""
+                            var element = arguments[0];
+                            var textList = arguments[1];
+                            var textNodeIndex = 0;
+                            for (var i = 0; i < element.childNodes.length; i++) {
+                                if (element.childNodes[i].nodeType === 3 && textNodeIndex < textList.length) {
+                                    element.childNodes[i].textContent = textList[textNodeIndex];
+                                    textNodeIndex++;
+                                }
+                            }
+                        """, elem, text_list)
+                    except Exception:
+                        pass
+            except Exception:
+                pass
             logging.warning(f"Could not take element background screenshot for slide {slide_index}: {e}")
 
     # 3. Recursively parse the children we found earlier
@@ -260,13 +362,50 @@ def extract_data_from_html(driver, file_path, temp_dir):
         screenshot_path = os.path.join(temp_dir, f"slide_{i}_bg.png")
         try:
             print("Paused before slide background screenshot. Press enter to continue...")
-            input()
+            # input()
+            
+            # 隐藏slide_element下的所有子元素
+            child_elements_to_hide = slide_element.find_elements(By.XPATH, ".//*")
+            original_styles = []
+            for child in child_elements_to_hide:
+                try:
+                    # 保存原始样式
+                    original_style = driver.execute_script("return arguments[0].style.display;", child)
+                    original_styles.append((child, original_style))
+                    # 隐藏元素
+                    driver.execute_script("arguments[0].style.display = 'none';", child)
+                except Exception as e:
+                    logging.warning(f"无法隐藏子元素: {e}")
+                    original_styles.append((child, None))
+            
+            # 截图
             slide_element.screenshot(screenshot_path)
             slide_data.background_image_path = screenshot_path
             logging.info(f"Took background screenshot for slide {i+1}.")
             
+            # 恢复所有子元素的显示状态
+            for child, original_style in original_styles:
+                try:
+                    if original_style:
+                        driver.execute_script("arguments[0].style.display = arguments[1];", child, original_style)
+                    else:
+                        driver.execute_script("arguments[0].style.display = '';", child)
+                except Exception as e:
+                    logging.warning(f"无法恢复子元素显示状态: {e}")
+            
         except Exception as e:
-            # 如果出错，确保将slide移回原位置
+            # 如果出错，确保恢复所有子元素的显示状态
+            try:
+                for child, original_style in original_styles:
+                    try:
+                        if original_style:
+                            driver.execute_script("arguments[0].style.display = arguments[1];", child, original_style)
+                        else:
+                            driver.execute_script("arguments[0].style.display = '';", child)
+                    except Exception:
+                        pass
+            except Exception:
+                pass
             logging.error(f"Could not take background screenshot for slide {i+1}: {e}")
 
         # 2. Recursively parse content
@@ -371,7 +510,7 @@ def add_textbox(slide, data, slide_width_px):
         if 'font-size' in geom:
             try:
                 font_size_px = float(str(geom['font-size']).replace("px", ""))
-                scale_factor = 0.85  # Adjusted scale factor for better pptx rendering
+                scale_factor = 0.75  # Adjusted scale factor for better pptx rendering
                 font.size = Pt(int(font_size_px * scale_factor))
             except (ValueError, TypeError):
                 pass
@@ -494,7 +633,12 @@ def main():
         input_base_dir = input_path
         try:
             html_files = [f for f in os.listdir(input_base_dir) if f.endswith('.html')]
-            html_files.sort(key=lambda f: int(re.sub(r'[^0-9]', '', f) or 0))
+            # 修改排序逻辑，更精确地提取文件名中的数字
+            def extract_number(filename):
+                match = re.search(r'file_(\d+)\.html', filename)
+                return int(match.group(1)) if match else 0
+            
+            html_files.sort(key=extract_number)
             logging.info(f"Found and sorted {len(html_files)} HTML files in directory '{input_base_dir}'.")
         except Exception as e:
             logging.error(f"Error reading input directory '{input_base_dir}': {e}")
