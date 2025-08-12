@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vitest的API介绍 - Vitest测试工具使用入门</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .slide {
+            width: 1280px;
+            min-height: 720px;
+            background-color: #ffffff;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        .slide-header {
+            padding: 50px 70px 20px;
+            position: relative;
+        }
+        .slide-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 70px;
+            width: 80px;
+            height: 4px;
+            background-color: #d32f2f;
+            border-radius: 2px;
+        }
+        .title {
+            font-size: 40px;
+            font-weight: 700;
+            color: #d32f2f;
+            margin-bottom: 16px;
+        }
+        .subtitle {
+            font-size: 20px;
+            color: #616161;
+        }
+        .slide-content {
+            flex-grow: 1;
+            padding: 30px 70px 50px;
+            display: flex;
+            flex-direction: column;
+        }
+        .api-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+            flex-grow: 1;
+        }
+        .api-card {
+            background-color: rgba(211, 47, 47, 0.05);
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+        .api-card:hover {
+            background-color: rgba(211, 47, 47, 0.08);
+            transform: translateY(-4px);
+        }
+        .api-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .api-icon {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background-color: rgba(211, 47, 47, 0.15);
+            margin-right: 16px;
+        }
+        .api-icon i {
+            font-size: 24px;
+            color: #d32f2f;
+        }
+        .api-title {
+            font-size: 22px;
+            font-weight: 500;
+            color: #212121;
+        }
+        .api-desc {
+            font-size: 18px;
+            color: #616161;
+            line-height: 1.5;
+            margin-bottom: 16px;
+        }
+        .code-block {
+            background-color: #263238;
+            border-radius: 8px;
+            padding: 16px;
+            font-family: 'Consolas', monospace;
+            font-size: 16px;
+            color: #eeffff;
+            overflow: auto;
+            line-height: 1.5;
+            flex-grow: 1;
+        }
+        .code-comment {
+            color: #546e7a;
+        }
+        .code-keyword {
+            color: #c792ea;
+        }
+        .code-string {
+            color: #c3e88d;
+        }
+        .code-function {
+            color: #82aaff;
+        }
+        .code-number {
+            color: #f78c6c;
+        }
+        .highlight {
+            color: #d32f2f;
+            font-weight: 500;
+        }
+        .api-usage {
+            margin-top: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .usage-tag {
+            background-color: rgba(211, 47, 47, 0.1);
+            color: #d32f2f;
+            font-size: 16px;
+            font-weight: 500;
+            padding: 6px 12px;
+            border-radius: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide">
+        <div class="slide-header">
+            <h1 class="title">Vitest的API介绍</h1>
+            <p class="subtitle">详细介绍Vitest的核心API，如test、describe、expect等</p>
+        </div>
+        <div class="slide-content">
+            <div class="api-grid">
+                <div class="api-card">
+                    <div class="api-header">
+                        <div class="api-icon">
+                            <i class="material-icons">science</i>
+                        </div>
+                        <h3 class="api-title">test / it</h3>
+                    </div>
+                    <p class="api-desc">
+                        定义一个测试用例，<span class="highlight">test</span>和<span class="highlight">it</span>功能相同，是Vitest中最基础的API
+                    </p>
+                    <div class="code-block">
+                        <span class="code-keyword">import</span> { test, expect } <span class="code-keyword">from</span> <span class="code-string">'vitest'</span><br><br>
+                        <span class="code-comment">// 基本用法</span><br>
+                        <span class="code-keyword">test</span>(<span class="code-string">'adds 1 + 2 to equal 3'</span>, () => {<br>
+                        &nbsp;&nbsp;<span class="code-keyword">expect</span>(<span class="code-number">1</span> + <span class="code-number">2</span>).toBe(<span class="code-number">3</span>);<br>
+                        });<br><br>
+                        <span class="code-comment">// 使用it别名</span><br>
+                        <span class="code-keyword">it</span>(<span class="code-string">'multiplies 2 * 3 to equal 6'</span>, () => {<br>
+                        &nbsp;&nbsp;<span class="code-keyword">expect</span>(<span class="code-number">2</span> * <span class="code-number">3</span>).toBe(<span class="code-number">6</span>);<br>
+                        });
+                    </div>
+                    <div class="api-usage">
+                        <span class="usage-tag">异步测试</span>
+                        <span class="usage-tag">超时设置</span>
+                        <span class="usage-tag">跳过测试</span>
+                    </div>
+                </div>
+                
+                <div class="api-card">
+                    <div class="api-header">
+                        <div class="api-icon">
+                            <i class="material-icons">category</i>
+                        </div>
+                        <h3 class="api-title">describe</h3>
+                    </div>
+                    <p class="api-desc">
+                        将相关测试分组到<span class="highlight">测试套件</span>中，提高测试组织性和可读性
+                    </p>
+                    <div class="code-block">
+                        <span class="code-keyword">import</span> { describe, test, expect } <span class="code-keyword">from</span> <span class="code-string">'vitest'</span><br><br>
+                        <span class="code-keyword">describe</span>(<span class="code-string">'Math functions'</span>, () => {<br>
+                        &nbsp;&nbsp;<span class="code-keyword">describe</span>(<span class="code-string">'add()'</span>, () => {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">test</span>(<span class="code-string">'adds positive numbers'</span>, () => {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">expect</span>(add(<span class="code-number">1</span>, <span class="code-number">2</span>)).toBe(<span class="code-number">3</span>);<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;});<br><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">test</span>(<span class="code-string">'adds negative numbers'</span>, () => {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">expect</span>(add(-<span class="code-number">1</span>, -<span class="code-number">2</span>)).toBe(-<span class="code-number">3</span>);<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;});<br>
+                        &nbsp;&nbsp;});<br>
+                        });
+                    </div>
+                    <div class="api-usage">
+                        <span class="usage-tag">嵌套分组</span>
+                        <span class="usage-tag">跳过套件</span>
+                        <span class="usage-tag">只运行套件</span>
+                    </div>
+                </div>
+                
+                <div class="api-card">
+                    <div class="api-header">
+                        <div class="api-icon">
+                            <i class="material-icons">rule</i>
+                        </div>
+                        <h3 class="api-title">expect</h3>
+                    </div>
+                    <p class="api-desc">
+                        用于创建<span class="highlight">断言</span>，验证代码行为是否符合预期，提供丰富的匹配器
+                    </p>
+                    <div class="code-block">
+                        <span class="code-keyword">import</span> { expect } <span class="code-keyword">from</span> <span class="code-string">'vitest'</span><br><br>
+                        <span class="code-comment">// 基本断言</span><br>
+                        <span class="code-keyword">expect</span>(value).toBe(expected);<br>
+                        <span class="code-keyword">expect</span>(value).toEqual(expected);<br>
+                        <span class="code-keyword">expect</span>(value).toBeTruthy();<br>
+                        <span class="code-keyword">expect</span>(value).toBeFalsy();<br><br>
+                        <span class="code-comment">// 数组和对象</span><br>
+                        <span class="code-keyword">expect</span>(array).toContain(item);<br>
+                        <span class="code-keyword">expect</span>(obj).toHaveProperty(key);<br><br>
+                        <span class="code-comment">// 异常</span><br>
+                        <span class="code-keyword">expect</span>(() => fn()).toThrow();
+                    </div>
+                    <div class="api-usage">
+                        <span class="usage-tag">否定断言</span>
+                        <span class="usage-tag">异步断言</span>
+                        <span class="usage-tag">自定义匹配器</span>
+                    </div>
+                </div>
+                
+                <div class="api-card">
+                    <div class="api-header">
+                        <div class="api-icon">
+                            <i class="material-icons">build</i>
+                        </div>
+                        <h3 class="api-title">生命周期钩子</h3>
+                    </div>
+                    <p class="api-desc">
+                        提供<span class="highlight">beforeEach</span>、<span class="highlight">afterEach</span>、<span class="highlight">beforeAll</span>和<span class="highlight">afterAll</span>等钩子函数，用于测试设置和清理
+                    </p>
+                    <div class="code-block">
+                        <span class="code-keyword">import</span> { beforeEach, afterEach } <span class="code-keyword">from</span> <span class="code-string">'vitest'</span><br><br>
+                        <span class="code-keyword">beforeEach</span>(() => {<br>
+                        &nbsp;&nbsp;<span class="code-comment">// 每个测试前运行</span><br>
+                        &nbsp;&nbsp;initializeDatabase();<br>
+                        });<br><br>
+                        <span class="code-keyword">afterEach</span>(() => {<br>
+                        &nbsp;&nbsp;<span class="code-comment">// 每个测试后运行</span><br>
+                        &nbsp;&nbsp;clearDatabase();<br>
+                        });<br><br>
+                        <span class="code-keyword">beforeAll</span>(() => {<br>
+                        &nbsp;&nbsp;<span class="code-comment">// 所有测试前运行一次</span><br>
+                        &nbsp;&nbsp;startServer();<br>
+                        });
+                    </div>
+                    <div class="api-usage">
+                        <span class="usage-tag">异步钩子</span>
+                        <span class="usage-tag">作用域控制</span>
+                        <span class="usage-tag">资源管理</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

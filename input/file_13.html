@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mock和模拟案例 - Vitest测试工具使用入门</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .slide {
+            width: 1280px;
+            min-height: 720px;
+            background-color: #ffffff;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        .slide-header {
+            padding: 50px 70px 20px;
+            position: relative;
+        }
+        .slide-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 70px;
+            width: 80px;
+            height: 4px;
+            background-color: #d32f2f;
+            border-radius: 2px;
+        }
+        .title {
+            font-size: 40px;
+            font-weight: 700;
+            color: #d32f2f;
+            margin-bottom: 16px;
+        }
+        .subtitle {
+            font-size: 20px;
+            color: #616161;
+        }
+        .slide-content {
+            flex-grow: 1;
+            padding: 30px 70px 50px;
+            display: flex;
+            flex-direction: column;
+        }
+        .mock-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+            flex-grow: 1;
+        }
+        .mock-card {
+            background-color: rgba(211, 47, 47, 0.05);
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+        .mock-card:hover {
+            background-color: rgba(211, 47, 47, 0.08);
+            transform: translateY(-4px);
+        }
+        .mock-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .mock-icon {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background-color: rgba(211, 47, 47, 0.15);
+            margin-right: 16px;
+        }
+        .mock-icon i {
+            font-size: 24px;
+            color: #d32f2f;
+        }
+        .mock-title {
+            font-size: 22px;
+            font-weight: 500;
+            color: #212121;
+        }
+        .mock-desc {
+            font-size: 18px;
+            color: #616161;
+            line-height: 1.5;
+            margin-bottom: 16px;
+        }
+        .code-block {
+            background-color: #263238;
+            border-radius: 8px;
+            padding: 16px;
+            font-family: 'Consolas', monospace;
+            font-size: 16px;
+            color: #eeffff;
+            overflow: auto;
+            line-height: 1.5;
+            flex-grow: 1;
+        }
+        .code-comment {
+            color: #546e7a;
+        }
+        .code-keyword {
+            color: #c792ea;
+        }
+        .code-string {
+            color: #c3e88d;
+        }
+        .code-function {
+            color: #82aaff;
+        }
+        .code-number {
+            color: #f78c6c;
+        }
+        .highlight {
+            color: #d32f2f;
+            font-weight: 500;
+        }
+        .key-points {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .key-point {
+            background-color: rgba(211, 47, 47, 0.1);
+            color: #d32f2f;
+            font-size: 16px;
+            font-weight: 500;
+            padding: 6px 12px;
+            border-radius: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide">
+        <div class="slide-header">
+            <h1 class="title">Mock和模拟案例</h1>
+            <p class="subtitle">展示如何使用Vitest进行Mock和模拟测试</p>
+        </div>
+        <div class="slide-content">
+            <div class="mock-grid">
+                <div class="mock-card">
+                    <div class="mock-header">
+                        <div class="mock-icon">
+                            <i class="material-icons">api</i>
+                        </div>
+                        <h3 class="mock-title">API请求模拟</h3>
+                    </div>
+                    <p class="mock-desc">
+                        使用Vitest模拟API请求，隔离外部依赖，确保测试稳定性
+                    </p>
+                    <div class="code-block">
+                        <span class="code-comment">// userService.js</span><br>
+                        <span class="code-keyword">import</span> axios <span class="code-keyword">from</span> <span class="code-string">'axios'</span>;<br><br>
+                        
+                        <span class="code-keyword">export</span> <span class="code-keyword">const</span> getUser = <span class="code-keyword">async</span> (id) => {<br>
+                        &nbsp;&nbsp;<span class="code-keyword">const</span> response = <span class="code-keyword">await</span> axios.get(<span class="code-string">`/api/users/${id}`</span>);<br>
+                        &nbsp;&nbsp;<span class="code-keyword">return</span> response.data;<br>
+                        };<br><br>
+                        
+                        <span class="code-comment">// userService.test.js</span><br>
+                        <span class="code-keyword">import</span> { vi, test, expect } <span class="code-keyword">from</span> <span class="code-string">'vitest'</span>;<br>
+                        <span class="code-keyword">import</span> { getUser } <span class="code-keyword">from</span> <span class="code-string">'./userService.js'</span>;<br><br>
+                        
+                        <span class="code-keyword">test</span>(<span class="code-string">'getUser returns user data'</span>, <span class="code-keyword">async</span> () => {<br>
+                        &nbsp;&nbsp;<span class="code-comment">// 模拟axios模块</span><br>
+                        &nbsp;&nbsp;vi.mock(<span class="code-string">'axios'</span>, () => ({<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">default</span>: {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;get: vi.fn().mockResolvedValue({<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;data: { id: <span class="code-number">1</span>, name: <span class="code-string">'John Doe'</span> }<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;})<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;}<br>
+                        &nbsp;&nbsp;}));<br><br>
+                        
+                        &nbsp;&nbsp;<span class="code-keyword">const</span> user = <span class="code-keyword">await</span> getUser(<span class="code-number">1</span>);<br>
+                        &nbsp;&nbsp;<span class="code-keyword">expect</span>(user).toEqual({ id: <span class="code-number">1</span>, name: <span class="code-string">'John Doe'</span> });<br>
+                        });
+                    </div>
+                    <div class="key-points">
+                        <span class="key-point">模块模拟</span>
+                        <span class="key-point">异步测试</span>
+                        <span class="key-point">隔离依赖</span>
+                    </div>
+                </div>
+                
+                <div class="mock-card">
+                    <div class="mock-header">
+                        <div class="mock-icon">
+                            <i class="material-icons">timer</i>
+                        </div>
+                        <h3 class="mock-title">定时器和函数模拟</h3>
+                    </div>
+                    <p class="mock-desc">
+                        使用Vitest模拟定时器和函数，控制测试流程，验证函数调用
+                    </p>
+                    <div class="code-block">
+                        <span class="code-comment">// timer.js</span><br>
+                        <span class="code-keyword">export</span> <span class="code-keyword">const</span> debounce = (fn, delay) => {<br>
+                        &nbsp;&nbsp;<span class="code-keyword">let</span> timeoutId;<br>
+                        &nbsp;&nbsp;<span class="code-keyword">return</span> (...args) => {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;clearTimeout(timeoutId);<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;timeoutId = setTimeout(() => fn(...args), delay);<br>
+                        &nbsp;&nbsp;};<br>
+                        };<br><br>
+                        
+                        <span class="code-comment">// timer.test.js</span><br>
+                        <span class="code-keyword">import</span> { vi, test, expect, beforeEach } <span class="code-keyword">from</span> <span class="code-string">'vitest'</span>;<br>
+                        <span class="code-keyword">import</span> { debounce } <span class="code-keyword">from</span> <span class="code-string">'./timer.js'</span>;<br><br>
+                        
+                        <span class="code-keyword">beforeEach</span>(() => {<br>
+                        &nbsp;&nbsp;vi.useFakeTimers();<br>
+                        });<br><br>
+                        
+                        <span class="code-keyword">test</span>(<span class="code-string">'debounce calls function after delay'</span>, () => {<br>
+                        &nbsp;&nbsp;<span class="code-keyword">const</span> mockFn = vi.fn();<br>
+                        &nbsp;&nbsp;<span class="code-keyword">const</span> debouncedFn = debounce(mockFn, <span class="code-number">1000</span>);<br><br>
+                        
+                        &nbsp;&nbsp;debouncedFn();<br>
+                        &nbsp;&nbsp;<span class="code-keyword">expect</span>(mockFn).not.toHaveBeenCalled();<br><br>
+                        
+                        &nbsp;&nbsp;<span class="code-comment">// 快进时间</span><br>
+                        &nbsp;&nbsp;vi.advanceTimersByTime(<span class="code-number">1000</span>);<br>
+                        &nbsp;&nbsp;<span class="code-keyword">expect</span>(mockFn).toHaveBeenCalledTimes(<span class="code-number">1</span>);<br>
+                        });
+                    </div>
+                    <div class="key-points">
+                        <span class="key-point">定时器模拟</span>
+                        <span class="key-point">函数验证</span>
+                        <span class="key-point">调用次数检查</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

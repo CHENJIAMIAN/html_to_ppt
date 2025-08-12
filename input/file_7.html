@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vitest的安装和配置 - Vitest测试工具使用入门</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .slide {
+            width: 1280px;
+            min-height: 720px;
+            background-color: #ffffff;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        .slide-header {
+            padding: 50px 70px 20px;
+            position: relative;
+        }
+        .slide-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 70px;
+            width: 80px;
+            height: 4px;
+            background-color: #d32f2f;
+            border-radius: 2px;
+        }
+        .title {
+            font-size: 40px;
+            font-weight: 700;
+            color: #d32f2f;
+            margin-bottom: 16px;
+        }
+        .subtitle {
+            font-size: 20px;
+            color: #616161;
+        }
+        .slide-content {
+            flex-grow: 1;
+            padding: 30px 70px 50px;
+            display: flex;
+            flex-direction: column;
+        }
+        .content-container {
+            display: flex;
+            gap: 30px;
+            flex-grow: 1;
+        }
+        .left-column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        .right-column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        .section-card {
+            background-color: rgba(211, 47, 47, 0.05);
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.3s ease;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .section-card:hover {
+            background-color: rgba(211, 47, 47, 0.08);
+            transform: translateY(-4px);
+        }
+        .section-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .section-icon {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background-color: rgba(211, 47, 47, 0.15);
+            margin-right: 16px;
+        }
+        .section-icon i {
+            font-size: 24px;
+            color: #d32f2f;
+        }
+        .section-title {
+            font-size: 22px;
+            font-weight: 500;
+            color: #212121;
+        }
+        .code-block {
+            background-color: #263238;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 12px 0;
+            font-family: 'Consolas', monospace;
+            font-size: 16px;
+            color: #eeffff;
+            overflow: auto;
+            line-height: 1.5;
+        }
+        .code-comment {
+            color: #546e7a;
+        }
+        .code-keyword {
+            color: #c792ea;
+        }
+        .code-string {
+            color: #c3e88d;
+        }
+        .code-function {
+            color: #82aaff;
+        }
+        .code-number {
+            color: #f78c6c;
+        }
+        .highlight {
+            color: #d32f2f;
+            font-weight: 500;
+        }
+        .step-list {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .step-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+        .step-number {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background-color: rgba(211, 47, 47, 0.15);
+            color: #d32f2f;
+            font-weight: 700;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+        .step-content {
+            flex-grow: 1;
+        }
+        .step-title {
+            font-size: 18px;
+            font-weight: 500;
+            color: #212121;
+            margin-bottom: 4px;
+        }
+        .step-desc {
+            font-size: 16px;
+            color: #616161;
+            line-height: 1.5;
+        }
+        .config-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 12px;
+        }
+        .config-option {
+            background-color: rgba(211, 47, 47, 0.03);
+            border-radius: 8px;
+            padding: 12px;
+        }
+        .option-name {
+            font-size: 16px;
+            font-weight: 500;
+            color: #d32f2f;
+            margin-bottom: 4px;
+        }
+        .option-desc {
+            font-size: 14px;
+            color: #616161;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide">
+        <div class="slide-header">
+            <h1 class="title">Vitest的安装和配置</h1>
+            <p class="subtitle">详细介绍如何安装Vitest以及基本配置方法</p>
+        </div>
+        <div class="slide-content">
+            <div class="content-container">
+                <div class="left-column">
+                    <div class="section-card">
+                        <div class="section-header">
+                            <div class="section-icon">
+                                <i class="material-icons">download</i>
+                            </div>
+                            <h3 class="section-title">安装Vitest</h3>
+                        </div>
+                        <ul class="step-list">
+                            <li class="step-item">
+                                <div class="step-number">1</div>
+                                <div class="step-content">
+                                    <div class="step-title">环境要求</div>
+                                    <div class="step-desc">Node.js 18.0.0 或更高版本</div>
+                                </div>
+                            </li>
+                            <li class="step-item">
+                                <div class="step-number">2</div>
+                                <div class="step-content">
+                                    <div class="step-title">安装命令</div>
+                                    <div class="code-block">
+                                        <span class="code-keyword">npm</span> install -D vitest
+                                    </div>
+                                    <div class="step-desc">或使用其他包管理器：</div>
+                                    <div class="code-block">
+                                        <span class="code-keyword">yarn</span> add -D vitest<br>
+                                        <span class="code-keyword">pnpm</span> add -D vitest
+                                    </div>
+                                </div>
+                            </li>
+                            <li class="step-item">
+                                <div class="step-number">3</div>
+                                <div class="step-content">
+                                    <div class="step-title">添加测试脚本</div>
+                                    <div class="step-desc">在package.json中添加：</div>
+                                    <div class="code-block">
+                                        <span class="code-string">"scripts"</span>: {<br>
+                                        &nbsp;&nbsp;<span class="code-string">"test"</span>: <span class="code-string">"vitest"</span><br>
+                                        }
+                                    </div>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="right-column">
+                    <div class="section-card">
+                        <div class="section-header">
+                            <div class="section-icon">
+                                <i class="material-icons">settings</i>
+                            </div>
+                            <h3 class="section-title">配置Vitest</h3>
+                        </div>
+                        <div class="step-desc">
+                            Vitest可以使用<span class="highlight">vite.config.js</span>中的配置，也可以创建单独的<span class="highlight">vitest.config.js</span>文件
+                        </div>
+                        <div class="code-block">
+                            <span class="code-keyword">import</span> { defineConfig } <span class="code-keyword">from</span> <span class="code-string">'vite'</span><br>
+                            <br>
+                            <span class="code-keyword">export default</span> defineConfig({<br>
+                            &nbsp;&nbsp;<span class="code-keyword">test</span>: {<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment">// 测试文件匹配模式</span><br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-string">include</span>: [<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-string">'**/*.{test,spec}.{js,ts,jsx,tsx}'</span><br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;],<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment">// 测试环境</span><br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-string">environment</span>: <span class="code-string">'jsdom'</span>,<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment">// 覆盖率配置</span><br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-string">coverage</span>: {<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-string">reporter</span>: [<span class="code-string">'text'</span>, <span class="code-string">'json'</span>, <span class="code-string">'html'</span>]<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;}<br>
+                            &nbsp;&nbsp;}<br>
+                            })
+                        </div>
+                        
+                        <div class="config-options">
+                            <div class="config-option">
+                                <div class="option-name">environment</div>
+                                <div class="option-desc">测试环境：'node'、'jsdom'、'happy-dom'</div>
+                            </div>
+                            <div class="config-option">
+                                <div class="option-name">globals</div>
+                                <div class="option-desc">启用全局API，无需导入</div>
+                            </div>
+                            <div class="config-option">
+                                <div class="option-name">setupFiles</div>
+                                <div class="option-desc">测试前运行的设置文件</div>
+                            </div>
+                            <div class="config-option">
+                                <div class="option-name">reporters</div>
+                                <div class="option-desc">测试报告输出格式</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

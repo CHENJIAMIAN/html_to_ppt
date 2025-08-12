@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>基础测试案例和异步代码测试案例 - Vitest测试工具使用入门</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .slide {
+            width: 1280px;
+            min-height: 720px;
+            background-color: #ffffff;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        .slide-header {
+            padding: 50px 70px 20px;
+            position: relative;
+        }
+        .slide-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 70px;
+            width: 80px;
+            height: 4px;
+            background-color: #d32f2f;
+            border-radius: 2px;
+        }
+        .title {
+            font-size: 40px;
+            font-weight: 700;
+            color: #d32f2f;
+            margin-bottom: 16px;
+        }
+        .subtitle {
+            font-size: 20px;
+            color: #616161;
+        }
+        .slide-content {
+            flex-grow: 1;
+            padding: 30px 70px 50px;
+            display: flex;
+            flex-direction: column;
+        }
+        .cases-container {
+            display: flex;
+            gap: 30px;
+            flex-grow: 1;
+        }
+        .case-column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        .case-card {
+            background-color: rgba(211, 47, 47, 0.05);
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.3s ease;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .case-card:hover {
+            background-color: rgba(211, 47, 47, 0.08);
+            transform: translateY(-4px);
+        }
+        .case-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .case-icon {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background-color: rgba(211, 47, 47, 0.15);
+            margin-right: 16px;
+        }
+        .case-icon i {
+            font-size: 24px;
+            color: #d32f2f;
+        }
+        .case-title {
+            font-size: 22px;
+            font-weight: 500;
+            color: #212121;
+        }
+        .case-desc {
+            font-size: 18px;
+            color: #616161;
+            line-height: 1.5;
+            margin-bottom: 16px;
+        }
+        .code-block {
+            background-color: #263238;
+            border-radius: 8px;
+            padding: 16px;
+            font-family: 'Consolas', monospace;
+            font-size: 16px;
+            color: #eeffff;
+            overflow: auto;
+            line-height: 1.5;
+            flex-grow: 1;
+        }
+        .code-comment {
+            color: #546e7a;
+        }
+        .code-keyword {
+            color: #c792ea;
+        }
+        .code-string {
+            color: #c3e88d;
+        }
+        .code-function {
+            color: #82aaff;
+        }
+        .code-number {
+            color: #f78c6c;
+        }
+        .highlight {
+            color: #d32f2f;
+            font-weight: 500;
+        }
+        .key-points {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .key-point {
+            background-color: rgba(211, 47, 47, 0.1);
+            color: #d32f2f;
+            font-size: 16px;
+            font-weight: 500;
+            padding: 6px 12px;
+            border-radius: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide">
+        <div class="slide-header">
+            <h1 class="title">基础测试案例和异步代码测试案例</h1>
+            <p class="subtitle">展示如何使用Vitest进行基础函数测试和异步代码测试</p>
+        </div>
+        <div class="slide-content">
+            <div class="cases-container">
+                <div class="case-column">
+                    <div class="case-card">
+                        <div class="case-header">
+                            <div class="case-icon">
+                                <i class="material-icons">functions</i>
+                            </div>
+                            <h3 class="case-title">基础函数测试</h3>
+                        </div>
+                        <p class="case-desc">
+                            使用Vitest测试简单函数，验证输入输出是否符合预期
+                        </p>
+                        <div class="code-block">
+                            <span class="code-comment">// math.js</span><br>
+                            <span class="code-keyword">export</span> <span class="code-keyword">const</span> sum = (a, b) => a + b;<br>
+                            <span class="code-keyword">export</span> <span class="code-keyword">const</span> multiply = (a, b) => a * b;<br>
+                            <span class="code-keyword">export</span> <span class="code-keyword">const</span> isEven = (num) => num % <span class="code-number">2</span> === <span class="code-number">0</span>;<br><br>
+                            
+                            <span class="code-comment">// math.test.js</span><br>
+                            <span class="code-keyword">import</span> { describe, test, expect } <span class="code-keyword">from</span> <span class="code-string">'vitest'</span>;<br>
+                            <span class="code-keyword">import</span> { sum, multiply, isEven } <span class="code-keyword">from</span> <span class="code-string">'./math.js'</span>;<br><br>
+                            
+                            <span class="code-keyword">describe</span>(<span class="code-string">'Math functions'</span>, () => {<br>
+                            &nbsp;&nbsp;<span class="code-keyword">test</span>(<span class="code-string">'sum adds two numbers'</span>, () => {<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">expect</span>(sum(<span class="code-number">1</span>, <span class="code-number">2</span>)).toBe(<span class="code-number">3</span>);<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">expect</span>(sum(-<span class="code-number">1</span>, <span class="code-number">1</span>)).toBe(<span class="code-number">0</span>);<br>
+                            &nbsp;&nbsp;});<br><br>
+                            
+                            &nbsp;&nbsp;<span class="code-keyword">test</span>(<span class="code-string">'multiply multiplies two numbers'</span>, () => {<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">expect</span>(multiply(<span class="code-number">3</span>, <span class="code-number">4</span>)).toBe(<span class="code-number">12</span>);<br>
+                            &nbsp;&nbsp;});<br><br>
+                            
+                            &nbsp;&nbsp;<span class="code-keyword">test</span>(<span class="code-string">'isEven checks if number is even'</span>, () => {<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">expect</span>(isEven(<span class="code-number">4</span>)).toBe(<span class="code-keyword">true</span>);<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">expect</span>(isEven(<span class="code-number">5</span>)).toBe(<span class="code-keyword">false</span>);<br>
+                            &nbsp;&nbsp;});<br>
+                            });
+                        </div>
+                        <div class="key-points">
+                            <span class="key-point">describe分组</span>
+                            <span class="key-point">test定义测试</span>
+                            <span class="key-point">expect断言</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="case-column">
+                    <div class="case-card">
+                        <div class="case-header">
+                            <div class="case-icon">
+                                <i class="material-icons">sync</i>
+                            </div>
+                            <h3 class="case-title">异步代码测试</h3>
+                        </div>
+                        <p class="case-desc">
+                            测试异步操作，如Promise、async/await和定时器
+                        </p>
+                        <div class="code-block">
+                            <span class="code-comment">// api.js</span><br>
+                            <span class="code-keyword">export</span> <span class="code-keyword">const</span> fetchData = () => {<br>
+                            &nbsp;&nbsp;<span class="code-keyword">return</span> <span class="code-keyword">new</span> <span class="code-function">Promise</span>((resolve) => {<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;setTimeout(() => {<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;resolve({ data: <span class="code-string">'test data'</span> });<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;}, <span class="code-number">1000</span>);<br>
+                            &nbsp;&nbsp;});<br>
+                            };<br><br>
+                            
+                            <span class="code-comment">// api.test.js</span><br>
+                            <span class="code-keyword">import</span> { test, expect, vi } <span class="code-keyword">from</span> <span class="code-string">'vitest'</span>;<br>
+                            <span class="code-keyword">import</span> { fetchData } <span class="code-keyword">from</span> <span class="code-string">'./api.js'</span>;<br><br>
+                            
+                            <span class="code-comment">// 测试Promise</span><br>
+                            <span class="code-keyword">test</span>(<span class="code-string">'fetchData returns data'</span>, <span class="code-keyword">async</span> () => {<br>
+                            &nbsp;&nbsp;<span class="code-keyword">const</span> result = <span class="code-keyword">await</span> fetchData();<br>
+                            &nbsp;&nbsp;<span class="code-keyword">expect</span>(result).toEqual({ data: <span class="code-string">'test data'</span> });<br>
+                            });<br><br>
+                            
+                            <span class="code-comment">// 使用vi.useFakeTimers模拟定时器</span><br>
+                            <span class="code-keyword">test</span>(<span class="code-string">'fetchData with fake timers'</span>, () => {<br>
+                            &nbsp;&nbsp;vi.useFakeTimers();<br>
+                            &nbsp;&nbsp;<span class="code-keyword">const</span> promise = fetchData();<br><br>
+                            &nbsp;&nbsp;<span class="code-comment">// 快进时间</span><br>
+                            &nbsp;&nbsp;vi.advanceTimersByTime(<span class="code-number">1000</span>);<br><br>
+                            &nbsp;&nbsp;<span class="code-keyword">return</span> promise.then(result => {<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">expect</span>(result).toEqual({ data: <span class="code-string">'test data'</span> });<br>
+                            &nbsp;&nbsp;});<br>
+                            });
+                        </div>
+                        <div class="key-points">
+                            <span class="key-point">async/await</span>
+                            <span class="key-point">Promise测试</span>
+                            <span class="key-point">定时器模拟</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

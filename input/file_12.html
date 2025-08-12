@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>组件测试案例 - Vitest测试工具使用入门</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .slide {
+            width: 1280px;
+            min-height: 720px;
+            background-color: #ffffff;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        .slide-header {
+            padding: 50px 70px 20px;
+            position: relative;
+        }
+        .slide-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 70px;
+            width: 80px;
+            height: 4px;
+            background-color: #d32f2f;
+            border-radius: 2px;
+        }
+        .title {
+            font-size: 40px;
+            font-weight: 700;
+            color: #d32f2f;
+            margin-bottom: 16px;
+        }
+        .subtitle {
+            font-size: 20px;
+            color: #616161;
+        }
+        .slide-content {
+            flex-grow: 1;
+            padding: 30px 70px 50px;
+            display: flex;
+            flex-direction: column;
+        }
+        .component-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+            flex-grow: 1;
+        }
+        .component-card {
+            background-color: rgba(211, 47, 47, 0.05);
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+        .component-card:hover {
+            background-color: rgba(211, 47, 47, 0.08);
+            transform: translateY(-4px);
+        }
+        .component-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .component-icon {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background-color: rgba(211, 47, 47, 0.15);
+            margin-right: 16px;
+        }
+        .component-icon i {
+            font-size: 24px;
+            color: #d32f2f;
+        }
+        .component-title {
+            font-size: 22px;
+            font-weight: 500;
+            color: #212121;
+        }
+        .component-desc {
+            font-size: 18px;
+            color: #616161;
+            line-height: 1.5;
+            margin-bottom: 16px;
+        }
+        .code-block {
+            background-color: #263238;
+            border-radius: 8px;
+            padding: 16px;
+            font-family: 'Consolas', monospace;
+            font-size: 16px;
+            color: #eeffff;
+            overflow: auto;
+            line-height: 1.5;
+            flex-grow: 1;
+        }
+        .code-comment {
+            color: #546e7a;
+        }
+        .code-keyword {
+            color: #c792ea;
+        }
+        .code-string {
+            color: #c3e88d;
+        }
+        .code-function {
+            color: #82aaff;
+        }
+        .code-number {
+            color: #f78c6c;
+        }
+        .highlight {
+            color: #d32f2f;
+            font-weight: 500;
+        }
+        .key-points {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .key-point {
+            background-color: rgba(211, 47, 47, 0.1);
+            color: #d32f2f;
+            font-size: 16px;
+            font-weight: 500;
+            padding: 6px 12px;
+            border-radius: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide">
+        <div class="slide-header">
+            <h1 class="title">组件测试案例</h1>
+            <p class="subtitle">展示如何使用Vitest测试Vue或React组件</p>
+        </div>
+        <div class="slide-content">
+            <div class="component-grid">
+                <div class="component-card">
+                    <div class="component-header">
+                        <div class="component-icon">
+                            <i class="material-icons">widgets</i>
+                        </div>
+                        <h3 class="component-title">Vue组件测试</h3>
+                    </div>
+                    <p class="component-desc">
+                        使用Vitest和Vue Test Utils测试Vue组件，验证渲染、交互和事件
+                    </p>
+                    <div class="code-block">
+                        <span class="code-comment">// Counter.vue</span><br>
+                        <span class="code-keyword">&lt;template&gt;</span><br>
+                        &nbsp;&nbsp;<span class="code-keyword">&lt;div&gt;</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">&lt;button</span> @click=<span class="code-string">"increment"</span><span class="code-keyword">&gt;</span>+<span class="code-keyword">&lt;/button&gt;</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">&lt;span&gt;</span>{{ count }}<span class="code-keyword">&lt;/span&gt;</span><br>
+                        &nbsp;&nbsp;<span class="code-keyword">&lt;/div&gt;</span><br>
+                        <span class="code-keyword">&lt;/template&gt;</span><br><br>
+                        
+                        <span class="code-keyword">&lt;script&gt;</span><br>
+                        <span class="code-keyword">export default</span> {<br>
+                        &nbsp;&nbsp;data() {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">return</span> { count: <span class="code-number">0</span> }<br>
+                        &nbsp;&nbsp;},<br>
+                        &nbsp;&nbsp;methods: {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;increment() { <span class="code-keyword">this</span>.count++ }<br>
+                        &nbsp;&nbsp;}<br>
+                        }<br>
+                        <span class="code-keyword">&lt;/script&gt;</span><br><br>
+                        
+                        <span class="code-comment">// Counter.test.js</span><br>
+                        <span class="code-keyword">import</span> { mount } <span class="code-keyword">from</span> <span class="code-string">'@vue/test-utils'</span><br>
+                        <span class="code-keyword">import</span> { test, expect } <span class="code-keyword">from</span> <span class="code-string">'vitest'</span><br>
+                        <span class="code-keyword">import</span> Counter <span class="code-keyword">from</span> <span class="code-string">'./Counter.vue'</span><br><br>
+                        
+                        <span class="code-keyword">test</span>(<span class="code-string">'increments value on click'</span>, <span class="code-keyword">async</span> () => {<br>
+                        &nbsp;&nbsp;<span class="code-keyword">const</span> wrapper = mount(Counter)<br>
+                        &nbsp;&nbsp;<span class="code-keyword">await</span> wrapper.find(<span class="code-string">'button'</span>).trigger(<span class="code-string">'click'</span>)<br><br>
+                        
+                        &nbsp;&nbsp;<span class="code-keyword">expect</span>(wrapper.text()).toContain(<span class="code-string">'1'</span>)<br>
+                        })
+                    </div>
+                    <div class="key-points">
+                        <span class="key-point">组件渲染</span>
+                        <span class="key-point">事件触发</span>
+                        <span class="key-point">状态验证</span>
+                    </div>
+                </div>
+                
+                <div class="component-card">
+                    <div class="component-header">
+                        <div class="component-icon">
+                            <i class="material-icons">react</i>
+                        </div>
+                        <h3 class="component-title">React组件测试</h3>
+                    </div>
+                    <p class="component-desc">
+                        使用Vitest和React Testing Library测试React组件，验证渲染和用户交互
+                    </p>
+                    <div class="code-block">
+                        <span class="code-comment">// Button.jsx</span><br>
+                        <span class="code-keyword">import</span> React, { useState } <span class="code-keyword">from</span> <span class="code-string">'react'</span><br><br>
+                        
+                        <span class="code-keyword">function</span> <span class="code-function">Button</span>({ onClick, children }) {<br>
+                        &nbsp;&nbsp;<span class="code-keyword">return</span> (<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">&lt;button</span> onClick={onClick}<span class="code-keyword">&gt;</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{children}<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">&lt;/button&gt;</span><br>
+                        &nbsp;&nbsp;)<br>
+                        }<br><br>
+                        
+                        <span class="code-keyword">export default</span> Button<br><br>
+                        
+                        <span class="code-comment">// Button.test.jsx</span><br>
+                        <span class="code-keyword">import</span> { render, screen, fireEvent } <span class="code-keyword">from</span> <span class="code-string">'@testing-library/react'</span><br>
+                        <span class="code-keyword">import</span> { test, expect, vi } <span class="code-keyword">from</span> <span class="code-string">'vitest'</span><br>
+                        <span class="code-keyword">import</span> Button <span class="code-keyword">from</span> <span class="code-string">'./Button.jsx'</span><br><br>
+                        
+                        <span class="code-keyword">test</span>(<span class="code-string">'calls onClick when clicked'</span>, () => {<br>
+                        &nbsp;&nbsp;<span class="code-keyword">const</span> handleClick = vi.fn()<br>
+                        &nbsp;&nbsp;render(<span class="code-keyword">&lt;Button</span> onClick={handleClick}<span class="code-keyword">&gt;</span>Click me<span class="code-keyword">&lt;/Button&gt;</span>)<br><br>
+                        
+                        &nbsp;&nbsp;fireEvent.click(screen.getByText(<span class="code-string">'Click me'</span>))<br>
+                        &nbsp;&nbsp;<span class="code-keyword">expect</span>(handleClick).toHaveBeenCalledTimes(<span class="code-number">1</span>)<br>
+                        })
+                    </div>
+                    <div class="key-points">
+                        <span class="key-point">渲染组件</span>
+                        <span class="key-point">查询元素</span>
+                        <span class="key-point">模拟事件</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

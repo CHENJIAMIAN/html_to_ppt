@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vitest的诞生背景和定位 - Vitest测试工具使用入门</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .slide {
+            width: 1280px;
+            min-height: 720px;
+            background-color: #ffffff;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        .slide-header {
+            padding: 50px 70px 20px;
+            position: relative;
+        }
+        .slide-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 70px;
+            width: 80px;
+            height: 4px;
+            background-color: #d32f2f;
+            border-radius: 2px;
+        }
+        .title {
+            font-size: 40px;
+            font-weight: 700;
+            color: #d32f2f;
+            margin-bottom: 16px;
+        }
+        .subtitle {
+            font-size: 20px;
+            color: #616161;
+        }
+        .slide-content {
+            flex-grow: 1;
+            padding: 30px 70px 50px;
+            display: flex;
+            flex-direction: column;
+        }
+        .intro-text {
+            font-size: 20px;
+            color: #424242;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+        .highlight {
+            color: #d32f2f;
+            font-weight: 500;
+        }
+        .content-grid {
+            display: flex;
+            gap: 30px;
+            flex-grow: 1;
+        }
+        .left-column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        .right-column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        .feature-card {
+            background-color: rgba(211, 47, 47, 0.05);
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.3s ease;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .feature-card:hover {
+            background-color: rgba(211, 47, 47, 0.08);
+            transform: translateY(-4px);
+        }
+        .feature-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .feature-icon {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background-color: rgba(211, 47, 47, 0.15);
+            margin-right: 16px;
+        }
+        .feature-icon i {
+            font-size: 24px;
+            color: #d32f2f;
+        }
+        .feature-title {
+            font-size: 22px;
+            font-weight: 500;
+            color: #212121;
+        }
+        .feature-desc {
+            font-size: 18px;
+            color: #616161;
+            line-height: 1.5;
+            flex-grow: 1;
+        }
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: rgba(211, 47, 47, 0.03);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .comparison-table th {
+            background-color: rgba(211, 47, 47, 0.1);
+            color: #212121;
+            font-size: 18px;
+            font-weight: 500;
+            padding: 12px 16px;
+            text-align: left;
+        }
+        .comparison-table td {
+            padding: 12px 16px;
+            font-size: 16px;
+            color: #616161;
+            border-top: 1px solid rgba(211, 47, 47, 0.05);
+        }
+        .comparison-table tr:hover td {
+            background-color: rgba(211, 47, 47, 0.03);
+        }
+        .check-icon {
+            color: #4caf50;
+        }
+        .close-icon {
+            color: #f44336;
+        }
+        .partial-icon {
+            color: #ff9800;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide">
+        <div class="slide-header">
+            <h1 class="title">Vitest的诞生背景和定位</h1>
+            <p class="subtitle">了解Vitest的起源、设计理念和在测试工具生态中的位置</p>
+        </div>
+        <div class="slide-content">
+            <p class="intro-text">
+                Vitest是由<span class="highlight">Vite团队</span>开发的下一代测试框架，旨在解决现代前端开发中的测试痛点
+            </p>
+            
+            <div class="content-grid">
+                <div class="left-column">
+                    <div class="feature-card">
+                        <div class="feature-header">
+                            <div class="feature-icon">
+                                <i class="material-icons">history</i>
+                            </div>
+                            <h3 class="feature-title">诞生背景</h3>
+                        </div>
+                        <p class="feature-desc">
+                            随着Vite在前端构建工具中的普及，团队发现现有测试框架无法充分利用Vite的优势，需要一款与Vite无缝集成的测试工具
+                        </p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-header">
+                            <div class="feature-icon">
+                                <i class="material-icons">lightbulb</i>
+                            </div>
+                            <h3 class="feature-title">设计理念</h3>
+                        </div>
+                        <p class="feature-desc">
+                            <ul style="list-style-type: none; padding-left: 0;">
+                                <li style="margin-bottom: 8px;">• 利用Vite的转换流水线</li>
+                                <li style="margin-bottom: 8px;">• 提供即时反馈和热重载</li>
+                                <li style="margin-bottom: 8px;">• 兼容Jest API和生态系统</li>
+                                <li>• 简化配置，提高开发体验</li>
+                            </ul>
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="right-column">
+                    <div class="feature-card">
+                        <div class="feature-header">
+                            <div class="feature-icon">
+                                <i class="material-icons">location_on</i>
+                            </div>
+                            <h3 class="feature-title">生态定位</h3>
+                        </div>
+                        <p class="feature-desc">
+                            Vitest定位为Vite项目的首选测试框架，同时也为非Vite项目提供了一个高性能的测试解决方案，填补了现代前端测试工具的空白
+                        </p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-header">
+                            <div class="feature-icon">
+                                <i class="material-icons">compare</i>
+                            </div>
+                            <h3 class="feature-title">与Jest的对比</h3>
+                        </div>
+                        <div class="feature-desc" style="overflow: auto;">
+                            <table class="comparison-table">
+                                <thead>
+                                    <tr>
+                                        <th>特性</th>
+                                        <th>Vitest</th>
+                                        <th>Jest</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>速度</td>
+                                        <td><i class="material-icons check-icon">check_circle</i> 极快</td>
+                                        <td><i class="material-icons partial-icon">radio_button_partial</i> 中等</td>
+                                    </tr>
+                                    <tr>
+                                        <td>配置</td>
+                                        <td><i class="material-icons check-icon">check_circle</i> 简单</td>
+                                        <td><i class="material-icons partial-icon">radio_button_partial</i> 复杂</td>
+                                    </tr>
+                                    <tr>
+                                        <td>ESM支持</td>
+                                        <td><i class="material-icons check-icon">check_circle</i> 原生</td>
+                                        <td><i class="material-icons close-icon">cancel</i> 有限</td>
+                                    </tr>
+                                    <tr>
+                                        <td>API兼容性</td>
+                                        <td><i class="material-icons check-icon">check_circle</i> 兼容Jest</td>
+                                        <td><i class="material-icons check-icon">check_circle</i> 原生</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vitest的高级功能 - Vitest测试工具使用入门</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .slide {
+            width: 1280px;
+            min-height: 720px;
+            background-color: #ffffff;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        .slide-header {
+            padding: 50px 70px 20px;
+            position: relative;
+        }
+        .slide-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 70px;
+            width: 80px;
+            height: 4px;
+            background-color: #d32f2f;
+            border-radius: 2px;
+        }
+        .title {
+            font-size: 40px;
+            font-weight: 700;
+            color: #d32f2f;
+            margin-bottom: 16px;
+        }
+        .subtitle {
+            font-size: 20px;
+            color: #616161;
+        }
+        .slide-content {
+            flex-grow: 1;
+            padding: 30px 70px 50px;
+            display: flex;
+            flex-direction: column;
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+            flex-grow: 1;
+        }
+        .feature-card {
+            background-color: rgba(211, 47, 47, 0.05);
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+        .feature-card:hover {
+            background-color: rgba(211, 47, 47, 0.08);
+            transform: translateY(-4px);
+        }
+        .feature-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .feature-icon {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background-color: rgba(211, 47, 47, 0.15);
+            margin-right: 16px;
+        }
+        .feature-icon i {
+            font-size: 24px;
+            color: #d32f2f;
+        }
+        .feature-title {
+            font-size: 22px;
+            font-weight: 500;
+            color: #212121;
+        }
+        .feature-desc {
+            font-size: 18px;
+            color: #616161;
+            line-height: 1.5;
+            margin-bottom: 16px;
+        }
+        .code-block {
+            background-color: #263238;
+            border-radius: 8px;
+            padding: 16px;
+            font-family: 'Consolas', monospace;
+            font-size: 16px;
+            color: #eeffff;
+            overflow: auto;
+            line-height: 1.5;
+            flex-grow: 1;
+        }
+        .code-comment {
+            color: #546e7a;
+        }
+        .code-keyword {
+            color: #c792ea;
+        }
+        .code-string {
+            color: #c3e88d;
+        }
+        .code-function {
+            color: #82aaff;
+        }
+        .code-number {
+            color: #f78c6c;
+        }
+        .highlight {
+            color: #d32f2f;
+            font-weight: 500;
+        }
+        .feature-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .feature-tag {
+            background-color: rgba(211, 47, 47, 0.1);
+            color: #d32f2f;
+            font-size: 16px;
+            font-weight: 500;
+            padding: 6px 12px;
+            border-radius: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide">
+        <div class="slide-header">
+            <h1 class="title">Vitest的高级功能</h1>
+            <p class="subtitle">介绍Vitest的高级特性，如模拟、快照测试、覆盖率等</p>
+        </div>
+        <div class="slide-content">
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-header">
+                        <div class="feature-icon">
+                            <i class="material-icons">psychology</i>
+                        </div>
+                        <h3 class="feature-title">模拟(Mocking)</h3>
+                    </div>
+                    <p class="feature-desc">
+                        Vitest提供<span class="highlight">vi</span>辅助工具，支持函数、模块和定时器的模拟，便于隔离测试依赖
+                    </p>
+                    <div class="code-block">
+                        <span class="code-keyword">import</span> { vi, test, expect } <span class="code-keyword">from</span> <span class="code-string">'vitest'</span><br><br>
+                        <span class="code-comment">// 模拟函数</span><br>
+                        <span class="code-keyword">const</span> mockFn = vi.fn();<br>
+                        mockFn(<span class="code-string">'hello'</span>);<br>
+                        <span class="code-keyword">expect</span>(mockFn).toHaveBeenCalledWith(<span class="code-string">'hello'</span>);<br><br>
+                        <span class="code-comment">// 模拟模块</span><br>
+                        vi.mock(<span class="code-string">'./axios'</span>, () => ({<br>
+                        &nbsp;&nbsp;<span class="code-keyword">default</span>: {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;get: vi.fn().mockResolvedValue({ data: <span class="code-string">'test'</span> })<br>
+                        &nbsp;&nbsp;}<br>
+                        }));
+                    </div>
+                    <div class="feature-tags">
+                        <span class="feature-tag">函数模拟</span>
+                        <span class="feature-tag">模块模拟</span>
+                        <span class="feature-tag">定时器模拟</span>
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-header">
+                        <div class="feature-icon">
+                            <i class="material-icons">photo_camera</i>
+                        </div>
+                        <h3 class="feature-title">快照测试</h3>
+                    </div>
+                    <p class="feature-desc">
+                        捕获组件输出的<span class="highlight">快照</span>，用于跟踪UI变化，确保组件渲染结果符合预期
+                    </p>
+                    <div class="code-block">
+                        <span class="code-keyword">import</span> { render } <span class="code-keyword">from</span> <span class="code-string">'@testing-library/vue'</span><br>
+                        <span class="code-keyword">import</span> { test } <span class="code-keyword">from</span> <span class="code-string">'vitest'</span><br>
+                        <span class="code-keyword">import</span> MyComponent <span class="code-keyword">from</span> <span class="code-string">'./MyComponent.vue'</span><br><br>
+                        <span class="code-keyword">test</span>(<span class="code-string">'renders correctly'</span>, () => {<br>
+                        &nbsp;&nbsp;<span class="code-keyword">const</span> { container } = render(MyComponent);<br>
+                        &nbsp;&nbsp;<span class="code-keyword">expect</span>(container).toMatchSnapshot();<br>
+                        });<br><br>
+                        <span class="code-comment">// 内联快照</span><br>
+                        <span class="code-keyword">expect</span>(user).toMatchInlineSnapshot({<br>
+                        &nbsp;&nbsp;name: <span class="code-string">'John'</span>,<br>
+                        &nbsp;&nbsp;age: <span class="code-number">30</span><br>
+                        });
+                    </div>
+                    <div class="feature-tags">
+                        <span class="feature-tag">UI测试</span>
+                        <span class="feature-tag">变更检测</span>
+                        <span class="feature-tag">内联快照</span>
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-header">
+                        <div class="feature-icon">
+                            <i class="material-icons">analytics</i>
+                        </div>
+                        <h3 class="feature-title">代码覆盖率</h3>
+                    </div>
+                    <p class="feature-desc">
+                        内置<span class="highlight">代码覆盖率</span>分析工具，支持多种报告格式，帮助评估测试完整性
+                    </p>
+                    <div class="code-block">
+                        <span class="code-comment">// 配置覆盖率</span><br>
+                        <span class="code-keyword">export default</span> defineConfig({<br>
+                        &nbsp;&nbsp;test: {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;coverage: {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;reporter: [<span class="code-string">'text'</span>, <span class="code-string">'json'</span>, <span class="code-string">'html'</span>],<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;include: [<span class="code-string">'src/**/*'</span>],<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;exclude: [<span class="code-string">'node_modules/**'</span>],<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;thresholds: {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;global: {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;branches: <span class="code-number">80</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;functions: <span class="code-number">80</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;lines: <span class="code-number">80</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;statements: <span class="code-number">80</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;}<br>
+                        &nbsp;&nbsp;}<br>
+                        });
+                    </div>
+                    <div class="feature-tags">
+                        <span class="feature-tag">覆盖率报告</span>
+                        <span class="feature-tag">阈值设置</span>
+                        <span class="feature-tag">HTML可视化</span>
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-header">
+                        <div class="feature-icon">
+                            <i class="material-icons">watch_later</i>
+                        </div>
+                        <h3 class="feature-title">性能优化</h3>
+                    </div>
+                    <p class="feature-desc">
+                        提供<span class="highlight">并行测试</span>、<span class="highlight">智能缓存</span>和<span class="highlight">选择性测试</span>等特性，优化大型项目的测试执行效率
+                    </p>
+                    <div class="code-block">
+                        <span class="code-comment">// 并行测试配置</span><br>
+                        <span class="code-keyword">export default</span> defineConfig({<br>
+                        &nbsp;&nbsp;test: {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;pool: <span class="code-string">'threads'</span>, <span class="code-comment">// 使用线程池</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;poolOptions: {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;threads: {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;maxThreads: <span class="code-number">4</span>, <span class="code-comment">// 最大线程数</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;minThreads: <span class="code-number">2</span>  <span class="code-comment">// 最小线程数</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;},<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;maxConcurrency: <span class="code-number">5</span> <span class="code-comment">// 最大并发数</span><br>
+                        &nbsp;&nbsp;}<br>
+                        });<br><br>
+                        <span class="code-comment">// 运行特定测试</span><br>
+                        npx vitest <span class="code-string">--run</span> <span class="code-string">--reporter=verbose</span> <span class="code-string">fileName.test.js</span>
+                    </div>
+                    <div class="feature-tags">
+                        <span class="feature-tag">并行执行</span>
+                        <span class="feature-tag">智能缓存</span>
+                        <span class="feature-tag">选择性测试</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

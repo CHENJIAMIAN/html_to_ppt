@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>快照测试案例 - Vitest测试工具使用入门</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .slide {
+            width: 1280px;
+            min-height: 720px;
+            background-color: #ffffff;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        .slide-header {
+            padding: 50px 70px 20px;
+            position: relative;
+        }
+        .slide-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 70px;
+            width: 80px;
+            height: 4px;
+            background-color: #d32f2f;
+            border-radius: 2px;
+        }
+        .title {
+            font-size: 40px;
+            font-weight: 700;
+            color: #d32f2f;
+            margin-bottom: 16px;
+        }
+        .subtitle {
+            font-size: 20px;
+            color: #616161;
+        }
+        .slide-content {
+            flex-grow: 1;
+            padding: 30px 70px 50px;
+            display: flex;
+            flex-direction: column;
+        }
+        .snapshot-container {
+            display: flex;
+            gap: 30px;
+            flex-grow: 1;
+        }
+        .snapshot-column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        .snapshot-card {
+            background-color: rgba(211, 47, 47, 0.05);
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.3s ease;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .snapshot-card:hover {
+            background-color: rgba(211, 47, 47, 0.08);
+            transform: translateY(-4px);
+        }
+        .snapshot-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .snapshot-icon {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background-color: rgba(211, 47, 47, 0.15);
+            margin-right: 16px;
+        }
+        .snapshot-icon i {
+            font-size: 24px;
+            color: #d32f2f;
+        }
+        .snapshot-title {
+            font-size: 22px;
+            font-weight: 500;
+            color: #212121;
+        }
+        .snapshot-desc {
+            font-size: 18px;
+            color: #616161;
+            line-height: 1.5;
+            margin-bottom: 16px;
+        }
+        .code-block {
+            background-color: #263238;
+            border-radius: 8px;
+            padding: 16px;
+            font-family: 'Consolas', monospace;
+            font-size: 16px;
+            color: #eeffff;
+            overflow: auto;
+            line-height: 1.5;
+            flex-grow: 1;
+        }
+        .code-comment {
+            color: #546e7a;
+        }
+        .code-keyword {
+            color: #c792ea;
+        }
+        .code-string {
+            color: #c3e88d;
+        }
+        .code-function {
+            color: #82aaff;
+        }
+        .code-number {
+            color: #f78c6c;
+        }
+        .highlight {
+            color: #d32f2f;
+            font-weight: 500;
+        }
+        .key-points {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .key-point {
+            background-color: rgba(211, 47, 47, 0.1);
+            color: #d32f2f;
+            font-size: 16px;
+            font-weight: 500;
+            padding: 6px 12px;
+            border-radius: 16px;
+        }
+        .snapshot-file {
+            background-color: rgba(211, 47, 47, 0.03);
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 12px;
+            font-family: 'Consolas', monospace;
+            font-size: 14px;
+            color: #616161;
+            line-height: 1.5;
+        }
+        .snapshot-file-name {
+            font-weight: 500;
+            color: #d32f2f;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide">
+        <div class="slide-header">
+            <h1 class="title">快照测试案例</h1>
+            <p class="subtitle">展示如何使用Vitest进行快照测试</p>
+        </div>
+        <div class="slide-content">
+            <div class="snapshot-container">
+                <div class="snapshot-column">
+                    <div class="snapshot-card">
+                        <div class="snapshot-header">
+                            <div class="snapshot-icon">
+                                <i class="material-icons">photo_camera</i>
+                            </div>
+                            <h3 class="snapshot-title">组件快照测试</h3>
+                        </div>
+                        <p class="snapshot-desc">
+                            捕获组件渲染输出的快照，用于跟踪UI变化，确保组件渲染结果符合预期
+                        </p>
+                        <div class="code-block">
+                            <span class="code-comment">// Button.jsx</span><br>
+                            <span class="code-keyword">import</span> React <span class="code-keyword">from</span> <span class="code-string">'react'</span>;<br><br>
+                            
+                            <span class="code-keyword">function</span> <span class="code-function">Button</span>({ children, variant = <span class="code-string">'primary'</span> }) {<br>
+                            &nbsp;&nbsp;<span class="code-keyword">return</span> (<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">&lt;button</span> className={`btn btn-${variant}`}<span class="code-keyword">&gt;</span><br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{children}<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">&lt;/button&gt;</span><br>
+                            &nbsp;&nbsp;);<br>
+                            }<br><br>
+                            
+                            <span class="code-comment">// Button.test.jsx</span><br>
+                            <span class="code-keyword">import</span> { render } <span class="code-keyword">from</span> <span class="code-string">'@testing-library/react'</span>;<br>
+                            <span class="code-keyword">import</span> { test, expect } <span class="code-keyword">from</span> <span class="code-string">'vitest'</span>;<br>
+                            <span class="code-keyword">import</span> Button <span class="code-keyword">from</span> <span class="code-string">'./Button.jsx'</span>;<br><br>
+                            
+                            <span class="code-keyword">test</span>(<span class="code-string">'renders primary button correctly'</span>, () => {<br>
+                            &nbsp;&nbsp;<span class="code-keyword">const</span> { container } = render(<span class="code-keyword">&lt;Button&gt;</span>Click me<span class="code-keyword">&lt;/Button&gt;</span>);<br>
+                            &nbsp;&nbsp;<span class="code-keyword">expect</span>(container).toMatchSnapshot();<br>
+                            });<br><br>
+                            
+                            <span class="code-keyword">test</span>(<span class="code-string">'renders secondary button correctly'</span>, () => {<br>
+                            &nbsp;&nbsp;<span class="code-keyword">const</span> { container } = render(<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">&lt;Button</span> variant={<span class="code-string">"secondary"</span>}<span class="code-keyword">&gt;</span>Save<span class="code-keyword">&lt;/Button&gt;</span><br>
+                            &nbsp;&nbsp;);<br>
+                            &nbsp;&nbsp;<span class="code-keyword">expect</span>(container).toMatchSnapshot();<br>
+                            });
+                        </div>
+                        <div class="key-points">
+                            <span class="key-point">UI测试</span>
+                            <span class="key-point">变更检测</span>
+                            <span class="key-point">回归测试</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="snapshot-column">
+                    <div class="snapshot-card">
+                        <div class="snapshot-header">
+                            <div class="snapshot-icon">
+                                <i class="material-icons">data_object</i>
+                            </div>
+                            <h3 class="snapshot-title">数据快照测试</h3>
+                        </div>
+                        <p class="snapshot-desc">
+                            捕获数据结构的快照，验证函数输出或API响应是否符合预期格式
+                        </p>
+                        <div class="code-block">
+                            <span class="code-comment">// userUtils.js</span><br>
+                            <span class="code-keyword">export</span> <span class="code-keyword">const</span> formatUser = (user) => {<br>
+                            &nbsp;&nbsp;<span class="code-keyword">return</span> {<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;id: user.id,<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;name: `${user.firstName} ${user.lastName}`,<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;email: user.email.toLowerCase(),<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;createdAt: <span class="code-keyword">new</span> <span class="code-function">Date</span>().toISOString()<br>
+                            &nbsp;&nbsp;};<br>
+                            };<br><br>
+                            
+                            <span class="code-comment">// userUtils.test.js</span><br>
+                            <span class="code-keyword">import</span> { test, expect, vi } <span class="code-keyword">from</span> <span class="code-string">'vitest'</span>;<br>
+                            <span class="code-keyword">import</span> { formatUser } <span class="code-keyword">from</span> <span class="code-string">'./userUtils.js'</span>;<br><br>
+                            
+                            <span class="code-keyword">test</span>(<span class="code-string">'formats user data correctly'</span>, () => {<br>
+                            &nbsp;&nbsp;<span class="code-comment">// 模拟日期</span><br>
+                            &nbsp;&nbsp;vi.setSystemTime(<span class="code-keyword">new</span> <span class="code-function">Date</span>(<span class="code-string">'2023-01-01'</span>));<br><br>
+                            
+                            &nbsp;&nbsp;<span class="code-keyword">const</span> user = {<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;id: <span class="code-number">1</span>,<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;firstName: <span class="code-string">'John'</span>,<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;lastName: <span class="code-string">'Doe'</span>,<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;email: <span class="code-string">'JOHN@EXAMPLE.COM'</span><br>
+                            &nbsp;&nbsp;};<br><br>
+                            
+                            &nbsp;&nbsp;<span class="code-keyword">const</span> formattedUser = formatUser(user);<br>
+                            &nbsp;&nbsp;<span class="code-comment">// 使用内联快照</span><br>
+                            &nbsp;&nbsp;<span class="code-keyword">expect</span>(formattedUser).toMatchInlineSnapshot({<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;id: <span class="code-number">1</span>,<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;name: <span class="code-string">'John Doe'</span>,<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;email: <span class="code-string">'john@example.com'</span>,<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;createdAt: <span class="code-string">'2023-01-01T00:00:00.000Z'</span><br>
+                            &nbsp;&nbsp;});<br>
+                            });
+                        </div>
+                        <div class="key-points">
+                            <span class="key-point">数据验证</span>
+                            <span class="key-point">内联快照</span>
+                            <span class="key-point">时间模拟</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="snapshot-file">
+                <div class="snapshot-file-name">生成的快照文件示例 (Button.test.jsx.snap):</div>
+                <pre>// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`renders primary button correctly 1`] = `
+&lt;div&gt;
+  &lt;button
+    class="btn btn-primary"
+  &gt;
+    Click me
+  &lt;/button&gt;
+&lt;/div&gt;
+`;
+
+exports[`renders secondary button correctly 1`] = `
+&lt;div&gt;
+  &lt;button
+    class="btn btn-secondary"
+  &gt;
+    Save
+  &lt;/button&gt;
+&lt;/div&gt;
+`;</pre>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

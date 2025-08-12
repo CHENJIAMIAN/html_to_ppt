@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vitest的基本概念和特点 - Vitest测试工具使用入门</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .slide {
+            width: 1280px;
+            min-height: 720px;
+            background-color: #ffffff;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        .slide-header {
+            padding: 50px 70px 20px;
+            position: relative;
+        }
+        .slide-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 70px;
+            width: 80px;
+            height: 4px;
+            background-color: #d32f2f;
+            border-radius: 2px;
+        }
+        .title {
+            font-size: 40px;
+            font-weight: 700;
+            color: #d32f2f;
+            margin-bottom: 16px;
+        }
+        .subtitle {
+            font-size: 20px;
+            color: #616161;
+        }
+        .slide-content {
+            flex-grow: 1;
+            padding: 30px 70px 50px;
+            display: flex;
+            flex-direction: column;
+        }
+        .intro-text {
+            font-size: 20px;
+            color: #424242;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+        .highlight {
+            color: #d32f2f;
+            font-weight: 500;
+        }
+        .features-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+            flex-grow: 1;
+        }
+        .feature-card {
+            background-color: rgba(211, 47, 47, 0.05);
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+        .feature-card:hover {
+            background-color: rgba(211, 47, 47, 0.08);
+            transform: translateY(-4px);
+        }
+        .feature-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .feature-icon {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background-color: rgba(211, 47, 47, 0.15);
+            margin-right: 16px;
+        }
+        .feature-icon i {
+            font-size: 24px;
+            color: #d32f2f;
+        }
+        .feature-title {
+            font-size: 22px;
+            font-weight: 500;
+            color: #212121;
+        }
+        .feature-desc {
+            font-size: 18px;
+            color: #616161;
+            line-height: 1.5;
+            flex-grow: 1;
+        }
+        .key-points {
+            margin-top: 16px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .key-point {
+            background-color: rgba(211, 47, 47, 0.1);
+            color: #d32f2f;
+            font-size: 16px;
+            font-weight: 500;
+            padding: 6px 12px;
+            border-radius: 16px;
+        }
+        .concept-box {
+            background-color: rgba(211, 47, 47, 0.03);
+            border-left: 4px solid #d32f2f;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+            border-radius: 0 8px 8px 0;
+        }
+        .concept-title {
+            font-size: 22px;
+            font-weight: 500;
+            color: #d32f2f;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+        .concept-title i {
+            margin-right: 8px;
+            font-size: 24px;
+        }
+        .concept-desc {
+            font-size: 18px;
+            color: #616161;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide">
+        <div class="slide-header">
+            <h1 class="title">Vitest的基本概念和特点</h1>
+            <p class="subtitle">了解Vitest的核心概念、主要特点和优势</p>
+        </div>
+        <div class="slide-content">
+            <div class="concept-box">
+                <h3 class="concept-title">
+                    <i class="material-icons">lightbulb</i>
+                    核心概念
+                </h3>
+                <p class="concept-desc">
+                    Vitest是由<span class="highlight">Vite驱动</span>的下一代测试框架，利用Vite的转换流水线，提供与开发环境一致的测试体验
+                </p>
+            </div>
+            
+            <div class="features-container">
+                <div class="feature-card">
+                    <div class="feature-header">
+                        <div class="feature-icon">
+                            <i class="material-icons">speed</i>
+                        </div>
+                        <h3 class="feature-title">极速性能</h3>
+                    </div>
+                    <p class="feature-desc">
+                        利用Vite的快速转换和热重载能力，提供闪电般的测试执行速度
+                    </p>
+                    <div class="key-points">
+                        <span class="key-point">快速启动</span>
+                        <span class="key-point">并行执行</span>
+                        <span class="key-point">智能缓存</span>
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-header">
+                        <div class="feature-icon">
+                            <i class="material-icons">sync</i>
+                        </div>
+                        <h3 class="feature-title">智能监听模式</h3>
+                    </div>
+                    <p class="feature-desc">
+                        只重新运行相关更改的测试，提供即时反馈，类似热模块重载的测试体验
+                    </p>
+                    <div class="key-points">
+                        <span class="key-point">增量测试</span>
+                        <span class="key-point">即时反馈</span>
+                        <span class="key-point">开发友好</span>
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-header">
+                        <div class="feature-icon">
+                            <i class="material-icons">integration_instructions</i>
+                        </div>
+                        <h3 class="feature-title">Jest兼容性</h3>
+                    </div>
+                    <p class="feature-desc">
+                        提供与Jest兼容的API，支持Expect断言、快照测试、覆盖率等功能，迁移成本低
+                    </p>
+                    <div class="key-points">
+                        <span class="key-point">熟悉API</span>
+                        <span class="key-point">生态兼容</span>
+                        <span class="key-point">平滑迁移</span>
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-header">
+                        <div class="feature-icon">
+                            <i class="material-icons">settings</i>
+                        </div>
+                        <h3 class="feature-title">简单配置</h3>
+                    </div>
+                    <p class="feature-desc">
+                        与应用共享相同的配置(vite.config.js)，无需维护两套配置，降低维护成本
+                    </p>
+                    <div class="key-points">
+                        <span class="key-point">统一配置</span>
+                        <span class="key-point">开箱即用</span>
+                        <span class="key-point">插件生态</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

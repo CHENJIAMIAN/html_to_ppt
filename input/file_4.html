@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>当前测试工具的局限性 - Vitest测试工具使用入门</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .slide {
+            width: 1280px;
+            min-height: 720px;
+            background-color: #ffffff;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        .slide-header {
+            padding: 50px 70px 20px;
+            position: relative;
+        }
+        .slide-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 70px;
+            width: 80px;
+            height: 4px;
+            background-color: #d32f2f;
+            border-radius: 2px;
+        }
+        .title {
+            font-size: 40px;
+            font-weight: 700;
+            color: #d32f2f;
+            margin-bottom: 16px;
+        }
+        .subtitle {
+            font-size: 20px;
+            color: #616161;
+        }
+        .slide-content {
+            flex-grow: 1;
+            padding: 30px 70px 50px;
+            display: flex;
+            flex-direction: column;
+        }
+        .intro-text {
+            font-size: 20px;
+            color: #424242;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+        .limitations-container {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            flex-grow: 1;
+        }
+        .limitation-row {
+            display: flex;
+            gap: 24px;
+            flex-grow: 1;
+        }
+        .limitation-card {
+            flex: 1;
+            background-color: rgba(211, 47, 47, 0.05);
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+        .limitation-card:hover {
+            background-color: rgba(211, 47, 47, 0.08);
+            transform: translateY(-4px);
+        }
+        .limitation-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .limitation-icon {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background-color: rgba(211, 47, 47, 0.15);
+            margin-right: 16px;
+        }
+        .limitation-icon i {
+            font-size: 24px;
+            color: #d32f2f;
+        }
+        .limitation-title {
+            font-size: 22px;
+            font-weight: 500;
+            color: #212121;
+        }
+        .limitation-desc {
+            font-size: 18px;
+            color: #616161;
+            line-height: 1.5;
+            flex-grow: 1;
+        }
+        .highlight {
+            color: #d32f2f;
+            font-weight: 500;
+        }
+        .tool-comparison {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            background-color: rgba(211, 47, 47, 0.03);
+            border-radius: 8px;
+            padding: 16px;
+        }
+        .tool-column {
+            flex: 1;
+            padding: 0 12px;
+        }
+        .tool-name {
+            font-size: 20px;
+            font-weight: 500;
+            color: #212121;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+        .tool-list {
+            list-style-type: none;
+        }
+        .tool-list li {
+            font-size: 16px;
+            color: #616161;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+        .tool-list li i {
+            font-size: 16px;
+            color: #d32f2f;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide">
+        <div class="slide-header">
+            <h1 class="title">当前测试工具的局限性</h1>
+            <p class="subtitle">分析现有测试工具存在的问题和不足</p>
+        </div>
+        <div class="slide-content">
+            <p class="intro-text">
+                尽管现有测试工具（如Jest）提供了强大功能，但在现代前端开发中仍存在<span class="highlight">显著局限性</span>
+            </p>
+            
+            <div class="limitations-container">
+                <div class="limitation-row">
+                    <div class="limitation-card">
+                        <div class="limitation-header">
+                            <div class="limitation-icon">
+                                <i class="material-icons">speed</i>
+                            </div>
+                            <h3 class="limitation-title">性能瓶颈</h3>
+                        </div>
+                        <p class="limitation-desc">
+                            大型项目中测试执行速度慢，启动时间长，缺乏智能的文件监听和增量测试机制
+                        </p>
+                    </div>
+                    <div class="limitation-card">
+                        <div class="limitation-header">
+                            <div class="limitation-icon">
+                                <i class="material-icons">settings</i>
+                            </div>
+                            <h3 class="limitation-title">配置复杂</h3>
+                        </div>
+                        <p class="limitation-desc">
+                            需要单独配置测试环境，与开发环境不一致，导致配置重复和维护成本增加
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="limitation-row">
+                    <div class="limitation-card">
+                        <div class="limitation-header">
+                            <div class="limitation-icon">
+                                <i class="material-icons">integration_instructions</i>
+                            </div>
+                            <h3 class="limitation-title">生态兼容性</h3>
+                        </div>
+                        <p class="limitation-desc">
+                            对现代前端技术栈（如ESM、TypeScript、JSX）支持不完善，需要额外配置和插件
+                        </p>
+                    </div>
+                    <div class="limitation-card">
+                        <div class="limitation-header">
+                            <div class="limitation-icon">
+                                <i class="material-icons">sync_problem</i>
+                            </div>
+                            <h3 class="limitation-title">开发体验</h3>
+                        </div>
+                        <p class="limitation-desc">
+                            缺乏即时反馈和热重载能力，开发过程中需要频繁重启测试，影响开发效率
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tool-comparison">
+                <div class="tool-column">
+                    <h4 class="tool-name">传统测试工具</h4>
+                    <ul class="tool-list">
+                        <li><i class="material-icons">close</i> 启动速度慢</li>
+                        <li><i class="material-icons">close</i> 配置复杂</li>
+                        <li><i class="material-icons">close</i> 现代语法支持有限</li>
+                    </ul>
+                </div>
+                <div class="tool-column">
+                    <h4 class="tool-name">开发者期望</h4>
+                    <ul class="tool-list">
+                        <li><i class="material-icons">check</i> 快速执行</li>
+                        <li><i class="material-icons">check</i> 简单配置</li>
+                        <li><i class="material-icons">check</i> 开箱即用的现代支持</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

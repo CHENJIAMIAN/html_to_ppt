@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vitest的配置选项详解 - Vitest测试工具使用入门</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .slide {
+            width: 1280px;
+            min-height: 720px;
+            background-color: #ffffff;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        .slide-header {
+            padding: 50px 70px 20px;
+            position: relative;
+        }
+        .slide-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 70px;
+            width: 80px;
+            height: 4px;
+            background-color: #d32f2f;
+            border-radius: 2px;
+        }
+        .title {
+            font-size: 40px;
+            font-weight: 700;
+            color: #d32f2f;
+            margin-bottom: 16px;
+        }
+        .subtitle {
+            font-size: 20px;
+            color: #616161;
+        }
+        .slide-content {
+            flex-grow: 1;
+            padding: 30px 70px 50px;
+            display: flex;
+            flex-direction: column;
+        }
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+            flex-grow: 1;
+        }
+        .config-card {
+            background-color: rgba(211, 47, 47, 0.05);
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+        .config-card:hover {
+            background-color: rgba(211, 47, 47, 0.08);
+            transform: translateY(-4px);
+        }
+        .config-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .config-icon {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background-color: rgba(211, 47, 47, 0.15);
+            margin-right: 16px;
+        }
+        .config-icon i {
+            font-size: 24px;
+            color: #d32f2f;
+        }
+        .config-title {
+            font-size: 22px;
+            font-weight: 500;
+            color: #212121;
+        }
+        .config-desc {
+            font-size: 18px;
+            color: #616161;
+            line-height: 1.5;
+            margin-bottom: 16px;
+        }
+        .code-block {
+            background-color: #263238;
+            border-radius: 8px;
+            padding: 16px;
+            font-family: 'Consolas', monospace;
+            font-size: 16px;
+            color: #eeffff;
+            overflow: auto;
+            line-height: 1.5;
+            flex-grow: 1;
+        }
+        .code-comment {
+            color: #546e7a;
+        }
+        .code-keyword {
+            color: #c792ea;
+        }
+        .code-string {
+            color: #c3e88d;
+        }
+        .code-function {
+            color: #82aaff;
+        }
+        .code-number {
+            color: #f78c6c;
+        }
+        .highlight {
+            color: #d32f2f;
+            font-weight: 500;
+        }
+        .option-list {
+            margin-top: 12px;
+        }
+        .option-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+        .option-item i {
+            color: #d32f2f;
+            margin-right: 8px;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        .option-text {
+            font-size: 16px;
+            color: #616161;
+        }
+        .option-name {
+            font-weight: 500;
+            color: #212121;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide">
+        <div class="slide-header">
+            <h1 class="title">Vitest的配置选项详解</h1>
+            <p class="subtitle">详细介绍Vitest的各种配置选项及其用途</p>
+        </div>
+        <div class="slide-content">
+            <div class="config-grid">
+                <div class="config-card">
+                    <div class="config-header">
+                        <div class="config-icon">
+                            <i class="material-icons">tune</i>
+                        </div>
+                        <h3 class="config-title">基础配置</h3>
+                    </div>
+                    <p class="config-desc">
+                        Vitest的基础配置选项，用于控制测试文件匹配、环境设置等
+                    </p>
+                    <div class="code-block">
+                        <span class="code-keyword">export default</span> defineConfig({<br>
+                        &nbsp;&nbsp;test: {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment">// 测试文件匹配模式</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-string">include</span>: [<span class="code-string">'**/*.{test,spec}.{js,ts,jsx,tsx}'</span>],<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment">// 排除的文件或目录</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-string">exclude</span>: [<span class="code-string">'node_modules/**'</span>, <span class="code-string">'dist/**'</span>],<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment">// 测试环境</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-string">environment</span>: <span class="code-string">'jsdom'</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment">// 全局API启用</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-string">globals</span>: <span class="code-keyword">true</span><br>
+                        &nbsp;&nbsp;}<br>
+                        })
+                    </div>
+                    <div class="option-list">
+                        <div class="option-item">
+                            <i class="material-icons">check_circle</i>
+                            <div class="option-text"><span class="option-name">include/exclude</span> - 控制哪些文件被视为测试文件</div>
+                        </div>
+                        <div class="option-item">
+                            <i class="material-icons">check_circle</i>
+                            <div class="option-text"><span class="option-name">environment</span> - 设置测试运行环境（node/jsdom/happy-dom）</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="config-card">
+                    <div class="config-header">
+                        <div class="config-icon">
+                            <i class="material-icons">speed</i>
+                        </div>
+                        <h3 class="config-title">性能优化</h3>
+                    </div>
+                    <p class="config-desc">
+                        优化测试执行性能的配置选项，包括并行测试、缓存策略等
+                    </p>
+                    <div class="code-block">
+                        <span class="code-keyword">export default</span> defineConfig({<br>
+                        &nbsp;&nbsp;test: {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment">// 测试池类型</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-string">pool</span>: <span class="code-string">'threads'</span>, <span class="code-comment">// 'threads' | 'forks' | 'vmThreads'</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment">// 最大并发数</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-string">maxConcurrency</span>: <span class="code-number">5</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment">// 测试超时时间(ms)</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-string">testTimeout</span>: <span class="code-number">5000</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment">// 钩子超时时间(ms)</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-string">hookTimeout</span>: <span class="code-number">10000</span><br>
+                        &nbsp;&nbsp;}<br>
+                        })
+                    </div>
+                    <div class="option-list">
+                        <div class="option-item">
+                            <i class="material-icons">check_circle</i>
+                            <div class="option-text"><span class="option-name">pool</span> - 控制测试运行方式，提高并行执行效率</div>
+                        </div>
+                        <div class="option-item">
+                            <i class="material-icons">check_circle</i>
+                            <div class="option-text"><span class="option-name">maxConcurrency</span> - 限制同时运行的测试数量</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="config-card">
+                    <div class="config-header">
+                        <div class="config-icon">
+                            <i class="material-icons">analytics</i>
+                        </div>
+                        <h3 class="config-title">覆盖率配置</h3>
+                    </div>
+                    <p class="config-desc">
+                        配置代码覆盖率报告的选项，帮助评估测试完整性
+                    </p>
+                    <div class="code-block">
+                        <span class="code-keyword">export default</span> defineConfig({<br>
+                        &nbsp;&nbsp;test: {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-string">coverage</span>: {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment">// 报告类型</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-string">reporter</span>: [<span class="code-string">'text'</span>, <span class="code-string">'json'</span>, <span class="code-string">'html'</span>],<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment">// 包含的文件</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-string">include</span>: [<span class="code-string">'src/**/*'</span>],<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment">// 排除的文件</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-string">exclude</span>: [<span class="code-string">'node_modules/**'</span>],<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment">// 覆盖率阈值</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-string">thresholds</span>: {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-string">global</span>: {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-string">lines</span>: <span class="code-number">80</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-string">functions</span>: <span class="code-number">80</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;}<br>
+                        &nbsp;&nbsp;}<br>
+                        })
+                    </div>
+                    <div class="option-list">
+                        <div class="option-item">
+                            <i class="material-icons">check_circle</i>
+                            <div class="option-text"><span class="option-name">reporter</span> - 设置覆盖率报告格式</div>
+                        </div>
+                        <div class="option-item">
+                            <i class="material-icons">check_circle</i>
+                            <div class="option-text"><span class="option-name">thresholds</span> - 定义覆盖率最低要求</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="config-card">
+                    <div class="config-header">
+                        <div class="config-icon">
+                            <i class="material-icons">build</i>
+                        </div>
+                        <h3 class="config-title">高级配置</h3>
+                    </div>
+                    <p class="config-desc">
+                        Vitest的高级配置选项，包括设置文件、报告器、别名等
+                    </p>
+                    <div class="code-block">
+                        <span class="code-keyword">export default</span> defineConfig({<br>
+                        &nbsp;&nbsp;test: {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment">// 测试前运行的设置文件</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-string">setupFiles</span>: [<span class="code-string">'./test-setup.js'</span>],<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment">// 测试报告器</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-string">reporters</span>: [<span class="code-string">'verbose'</span>, <span class="code-string">'json'</span>],<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment">// 模拟设置</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-string">mockReset</span>: <span class="code-keyword">true</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment">// 别名配置</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-string">alias</span>: {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-string">'@'</span>: <span class="code-string">'./src'</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;},<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment">// 全局变量</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-string">define</span>: {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-string">__APP_VERSION__</span>: <span class="code-string">'"1.0.0"'</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;}<br>
+                        &nbsp;&nbsp;}<br>
+                        })
+                    </div>
+                    <div class="option-list">
+                        <div class="option-item">
+                            <i class="material-icons">check_circle</i>
+                            <div class="option-text"><span class="option-name">setupFiles</span> - 在测试前运行的设置文件</div>
+                        </div>
+                        <div class="option-item">
+                            <i class="material-icons">check_circle</i>
+                            <div class="option-text"><span class="option-name">alias</span> - 配置模块导入别名</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

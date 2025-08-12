@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>课程总结 - Vitest测试工具使用入门</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .slide {
+            width: 1280px;
+            min-height: 720px;
+            background-color: #ffffff;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        .slide-header {
+            padding: 50px 70px 20px;
+            position: relative;
+        }
+        .slide-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 70px;
+            width: 80px;
+            height: 4px;
+            background-color: #d32f2f;
+            border-radius: 2px;
+        }
+        .title {
+            font-size: 40px;
+            font-weight: 700;
+            color: #d32f2f;
+            margin-bottom: 16px;
+        }
+        .subtitle {
+            font-size: 20px;
+            color: #616161;
+        }
+        .slide-content {
+            flex-grow: 1;
+            padding: 30px 70px 50px;
+            display: flex;
+            flex-direction: column;
+        }
+        .summary-container {
+            display: flex;
+            gap: 30px;
+            flex-grow: 1;
+        }
+        .summary-column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        .summary-card {
+            background-color: rgba(211, 47, 47, 0.05);
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.3s ease;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .summary-card:hover {
+            background-color: rgba(211, 47, 47, 0.08);
+            transform: translateY(-4px);
+        }
+        .summary-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .summary-icon {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background-color: rgba(211, 47, 47, 0.15);
+            margin-right: 16px;
+        }
+        .summary-icon i {
+            font-size: 24px;
+            color: #d32f2f;
+        }
+        .summary-title {
+            font-size: 22px;
+            font-weight: 500;
+            color: #212121;
+        }
+        .summary-list {
+            list-style-type: none;
+            padding-left: 0;
+            flex-grow: 1;
+        }
+        .summary-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 12px;
+            font-size: 18px;
+            color: #616161;
+            line-height: 1.5;
+        }
+        .summary-item:last-child {
+            margin-bottom: 0;
+        }
+        .summary-item i {
+            color: #d32f2f;
+            margin-right: 12px;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        .highlight {
+            color: #d32f2f;
+            font-weight: 500;
+        }
+        .resources-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-top: 12px;
+        }
+        .resource-item {
+            background-color: rgba(211, 47, 47, 0.03);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+        .resource-item:hover {
+            background-color: rgba(211, 47, 47, 0.08);
+        }
+        .resource-icon {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: rgba(211, 47, 47, 0.1);
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+        .resource-icon i {
+            font-size: 20px;
+            color: #d32f2f;
+        }
+        .resource-text {
+            font-size: 16px;
+            color: #616161;
+        }
+        .resource-name {
+            font-weight: 500;
+            color: #212121;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide">
+        <div class="slide-header">
+            <h1 class="title">课程总结</h1>
+            <p class="subtitle">总结课程重点，提供最佳实践建议和进一步学习的资源</p>
+        </div>
+        <div class="slide-content">
+            <div class="summary-container">
+                <div class="summary-column">
+                    <div class="summary-card">
+                        <div class="summary-header">
+                            <div class="summary-icon">
+                                <i class="material-icons">summarize</i>
+                            </div>
+                            <h3 class="summary-title">课程重点回顾</h3>
+                        </div>
+                        <ul class="summary-list">
+                            <li class="summary-item">
+                                <i class="material-icons">check_circle</i>
+                                <span>Vitest是由<span class="highlight">Vite驱动</span>的下一代测试框架，提供极速测试体验</span>
+                            </li>
+                            <li class="summary-item">
+                                <i class="material-icons">check_circle</i>
+                                <span>与Jest兼容的API，支持<span class="highlight">断言</span>、<span class="highlight">快照测试</span>和<span class="highlight">覆盖率</span>等功能</span>
+                            </li>
+                            <li class="summary-item">
+                                <i class="material-icons">check_circle</i>
+                                <span>利用Vite的配置和插件，与应用保持<span class="highlight">一致的开发环境</span></span>
+                            </li>
+                            <li class="summary-item">
+                                <i class="material-icons">check_circle</i>
+                                <span>支持<span class="highlight">智能监听模式</span>，只重新运行相关更改的测试</span>
+                            </li>
+                            <li class="summary-item">
+                                <i class="material-icons">check_circle</i>
+                                <span>内置<span class="highlight">ESM</span>、<span class="highlight">TypeScript</span>和<span class="highlight">JSX</span>支持，开箱即用</span>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="summary-card">
+                        <div class="summary-header">
+                            <div class="summary-icon">
+                                <i class="material-icons">tips_and_updates</i>
+                            </div>
+                            <h3 class="summary-title">最佳实践建议</h3>
+                        </div>
+                        <ul class="summary-list">
+                            <li class="summary-item">
+                                <i class="material-icons">star</i>
+                                <span>使用<span class="highlight">describe</span>组织相关测试，提高测试可读性和维护性</span>
+                            </li>
+                            <li class="summary-item">
+                                <i class="material-icons">star</i>
+                                <span>为每个测试用例提供<span class="highlight">清晰的描述</span>，明确测试目的</span>
+                            </li>
+                            <li class="summary-item">
+                                <i class="material-icons">star</i>
+                                <span>合理使用<span class="highlight">Mock</span>隔离外部依赖，确保测试稳定性</span>
+                            </li>
+                            <li class="summary-item">
+                                <i class="material-icons">star</i>
+                                <span>为关键组件和功能编写<span class="highlight">快照测试</span>，跟踪UI变化</span>
+                            </li>
+                            <li class="summary-item">
+                                <i class="material-icons">star</i>
+                                <span>配置<span class="highlight">代码覆盖率</span>阈值，确保测试完整性</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="summary-column">
+                    <div class="summary-card">
+                        <div class="summary-header">
+                            <div class="summary-icon">
+                                <i class="material-icons">school</i>
+                            </div>
+                            <h3 class="summary-title">进一步学习的资源</h3>
+                        </div>
+                        <div class="resources-grid">
+                            <div class="resource-item">
+                                <div class="resource-icon">
+                                    <i class="material-icons">menu_book</i>
+                                </div>
+                                <div class="resource-text">
+                                    <div class="resource-name">官方文档</div>
+                                    <div>cn.vitest.dev</div>
+                                </div>
+                            </div>
+                            <div class="resource-item">
+                                <div class="resource-icon">
+                                    <i class="material-icons">video_library</i>
+                                </div>
+                                <div class="resource-text">
+                                    <div class="resource-name">视频教程</div>
+                                    <div>Vitest实战系列课程</div>
+                                </div>
+                            </div>
+                            <div class="resource-item">
+                                <div class="resource-icon">
+                                    <i class="material-icons">code</i>
+                                </div>
+                                <div class="resource-text">
+                                    <div class="resource-name">示例项目</div>
+                                    <div>GitHub上的Vitest示例</div>
+                                </div>
+                            </div>
+                            <div class="resource-item">
+                                <div class="resource-icon">
+                                    <i class="material-icons">forum</i>
+                                </div>
+                                <div class="resource-text">
+                                    <div class="resource-name">社区论坛</div>
+                                    <div>Vitest Discord社区</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <ul class="summary-list" style="margin-top: 20px;">
+                            <li class="summary-item">
+                                <i class="material-icons">trending_up</i>
+                                <span>深入学习<span class="highlight">高级Mock技术</span>，处理复杂测试场景</span>
+                            </li>
+                            <li class="summary-item">
+                                <i class="material-icons">trending_up</i>
+                                <span>探索<span class="highlight">性能测试</span>和<span class="highlight">端到端测试</span>集成方案</span>
+                            </li>
+                            <li class="summary-item">
+                                <i class="material-icons">trending_up</i>
+                                <span>学习<span class="highlight">CI/CD集成</span>，将测试自动化融入开发流程</span>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="summary-card">
+                        <div class="summary-header">
+                            <div class="summary-icon">
+                                <i class="material-icons">psychology</i>
+                            </div>
+                            <h3 class="summary-title">测试思维培养</h3>
+                        </div>
+                        <ul class="summary-list">
+                            <li class="summary-item">
+                                <i class="material-icons">lightbulb</i>
+                                <span>从<span class="highlight">用户角度</span>思考测试场景，关注核心功能</span>
+                            </li>
+                            <li class="summary-item">
+                                <i class="material-icons">lightbulb</i>
+                                <span>编写<span class="highlight">可维护</span>的测试，避免过度依赖实现细节</span>
+                            </li>
+                            <li class="summary-item">
+                                <i class="material-icons">lightbulb</i>
+                                <span>采用<span class="highlight">测试驱动开发</span>(TDD)方法，先写测试再实现功能</span>
+                            </li>
+                            <li class="summary-item">
+                                <i class="material-icons">lightbulb</i>
+                                <span>定期<span class="highlight">重构测试</span>，保持测试代码质量</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

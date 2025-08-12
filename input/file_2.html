@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>目录 - Vitest测试工具使用入门</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .slide {
+            width: 1280px;
+            min-height: 720px;
+            background-color: #ffffff;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        .slide-header {
+            padding: 50px 70px 30px;
+        }
+        .title {
+            font-size: 40px;
+            font-weight: 700;
+            color: #d32f2f;
+            margin-bottom: 16px;
+        }
+        .subtitle {
+            font-size: 20px;
+            color: #616161;
+        }
+        .slide-content {
+            flex-grow: 1;
+            padding: 0 70px 50px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .toc-container {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        .toc-item {
+            display: flex;
+            align-items: center;
+            padding: 16px 24px;
+            border-radius: 8px;
+            background-color: rgba(211, 47, 47, 0.05);
+            transition: all 0.3s ease;
+        }
+        .toc-item:hover {
+            background-color: rgba(211, 47, 47, 0.1);
+            transform: translateX(8px);
+        }
+        .toc-icon {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: rgba(211, 47, 47, 0.15);
+            margin-right: 24px;
+        }
+        .toc-icon i {
+            font-size: 32px;
+            color: #d32f2f;
+        }
+        .toc-text {
+            flex-grow: 1;
+        }
+        .toc-title {
+            font-size: 24px;
+            font-weight: 500;
+            color: #212121;
+            margin-bottom: 4px;
+        }
+        .toc-desc {
+            font-size: 16px;
+            color: #757575;
+        }
+        .toc-number {
+            font-size: 32px;
+            font-weight: 700;
+            color: rgba(211, 47, 47, 0.2);
+            margin-left: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide">
+        <div class="slide-header">
+            <h1 class="title">目录</h1>
+            <p class="subtitle">本课程将带你全面了解Vitest测试工具的使用方法</p>
+        </div>
+        <div class="slide-content">
+            <div class="toc-container">
+                <div class="toc-item">
+                    <div class="toc-icon">
+                        <i class="material-icons">history_edu</i>
+                    </div>
+                    <div class="toc-text">
+                        <div class="toc-title">课程背景</div>
+                        <div class="toc-desc">前端测试的重要性、测试工具的局限性、Vitest的诞生背景</div>
+                    </div>
+                    <div class="toc-number">01</div>
+                </div>
+                <div class="toc-item">
+                    <div class="toc-icon">
+                        <i class="material-icons">menu_book</i>
+                    </div>
+                    <div class="toc-text">
+                        <div class="toc-title">课程内容</div>
+                        <div class="toc-desc">Vitest基本概念、安装配置、API介绍、高级功能、配置选项</div>
+                    </div>
+                    <div class="toc-number">02</div>
+                </div>
+                <div class="toc-item">
+                    <div class="toc-icon">
+                        <i class="material-icons">code</i>
+                    </div>
+                    <div class="toc-text">
+                        <div class="toc-title">案例讲解</div>
+                        <div class="toc-desc">基础测试、异步测试、组件测试、Mock模拟、快照测试</div>
+                    </div>
+                    <div class="toc-number">03</div>
+                </div>
+                <div class="toc-item">
+                    <div class="toc-icon">
+                        <i class="material-icons">fitness_center</i>
+                    </div>
+                    <div class="toc-text">
+                        <div class="toc-title">课程练习</div>
+                        <div class="toc-desc">基础测试用例编写、异步代码测试、组件测试实践</div>
+                    </div>
+                    <div class="toc-number">04</div>
+                </div>
+                <div class="toc-item">
+                    <div class="toc-icon">
+                        <i class="material-icons">summarize</i>
+                    </div>
+                    <div class="toc-text">
+                        <div class="toc-title">课程总结</div>
+                        <div class="toc-desc">重点回顾、最佳实践建议、进一步学习资源</div>
+                    </div>
+                    <div class="toc-number">05</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

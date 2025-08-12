@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>课程练习 - Vitest测试工具使用入门</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .slide {
+            width: 1280px;
+            min-height: 720px;
+            background-color: #ffffff;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        .slide-header {
+            padding: 50px 70px 20px;
+            position: relative;
+        }
+        .slide-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 70px;
+            width: 80px;
+            height: 4px;
+            background-color: #d32f2f;
+            border-radius: 2px;
+        }
+        .title {
+            font-size: 40px;
+            font-weight: 700;
+            color: #d32f2f;
+            margin-bottom: 16px;
+        }
+        .subtitle {
+            font-size: 20px;
+            color: #616161;
+        }
+        .slide-content {
+            flex-grow: 1;
+            padding: 30px 70px 50px;
+            display: flex;
+            flex-direction: column;
+        }
+        .exercises-container {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            flex-grow: 1;
+        }
+        .exercise-card {
+            background-color: rgba(211, 47, 47, 0.05);
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: flex-start;
+        }
+        .exercise-card:hover {
+            background-color: rgba(211, 47, 47, 0.08);
+            transform: translateY(-4px);
+        }
+        .exercise-number {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background-color: rgba(211, 47, 47, 0.15);
+            color: #d32f2f;
+            font-size: 24px;
+            font-weight: 700;
+            margin-right: 20px;
+            flex-shrink: 0;
+        }
+        .exercise-content {
+            flex-grow: 1;
+        }
+        .exercise-title {
+            font-size: 22px;
+            font-weight: 500;
+            color: #212121;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+        }
+        .exercise-title i {
+            font-size: 24px;
+            color: #d32f2f;
+            margin-right: 8px;
+        }
+        .exercise-desc {
+            font-size: 18px;
+            color: #616161;
+            line-height: 1.5;
+            margin-bottom: 16px;
+        }
+        .exercise-steps {
+            background-color: rgba(211, 47, 47, 0.03);
+            border-radius: 8px;
+            padding: 16px;
+        }
+        .step-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+        .step-item:last-child {
+            margin-bottom: 0;
+        }
+        .step-bullet {
+            color: #d32f2f;
+            margin-right: 8px;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        .step-text {
+            font-size: 16px;
+            color: #616161;
+            line-height: 1.5;
+        }
+        .highlight {
+            color: #d32f2f;
+            font-weight: 500;
+        }
+        .exercise-tips {
+            margin-top: 12px;
+            display: flex;
+            align-items: center;
+            background-color: rgba(211, 47, 47, 0.08);
+            border-radius: 8px;
+            padding: 12px;
+        }
+        .exercise-tips i {
+            font-size: 20px;
+            color: #d32f2f;
+            margin-right: 8px;
+        }
+        .exercise-tips-text {
+            font-size: 16px;
+            color: #616161;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide">
+        <div class="slide-header">
+            <h1 class="title">课程练习</h1>
+            <p class="subtitle">通过实践巩固Vitest测试工具的使用方法</p>
+        </div>
+        <div class="slide-content">
+            <div class="exercises-container">
+                <div class="exercise-card">
+                    <div class="exercise-number">1</div>
+                    <div class="exercise-content">
+                        <h3 class="exercise-title">
+                            <i class="material-icons">functions</i>
+                            基础测试用例编写
+                        </h3>
+                        <p class="exercise-desc">
+                            为以下工具函数编写测试用例，验证各种边界条件和异常情况
+                        </p>
+                        <div class="exercise-steps">
+                            <div class="step-item">
+                                <span class="step-bullet">•</span>
+                                <div class="step-text">
+                                    为<span class="highlight">数组工具函数</span>编写测试：filter、map、reduce
+                                </div>
+                            </div>
+                            <div class="step-item">
+                                <span class="step-bullet">•</span>
+                                <div class="step-text">
+                                    为<span class="highlight">字符串工具函数</span>编写测试：trim、split、replace
+                                </div>
+                            </div>
+                            <div class="step-item">
+                                <span class="step-bullet">•</span>
+                                <div class="step-text">
+                                    使用<span class="highlight">describe</span>组织测试套件，使用<span class="highlight">test</span>定义测试用例
+                                </div>
+                            </div>
+                        </div>
+                        <div class="exercise-tips">
+                            <i class="material-icons">lightbulb</i>
+                            <div class="exercise-tips-text">提示：考虑使用不同的断言方法（toBe、toEqual、toBeTruthy等）验证结果</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="exercise-card">
+                    <div class="exercise-number">2</div>
+                    <div class="exercise-content">
+                        <h3 class="exercise-title">
+                            <i class="material-icons">sync</i>
+                            异步代码测试
+                        </h3>
+                        <p class="exercise-desc">
+                            测试异步操作，包括Promise、async/await和定时器功能
+                        </p>
+                        <div class="exercise-steps">
+                            <div class="step-item">
+                                <span class="step-bullet">•</span>
+                                <div class="step-text">
+                                    为<span class="highlight">API请求函数</span>编写测试，使用<span class="highlight">vi.mock</span>模拟API响应
+                                </div>
+                            </div>
+                            <div class="step-item">
+                                <span class="step-bullet">•</span>
+                                <div class="step-text">
+                                    测试<span class="highlight">定时器函数</span>，使用<span class="highlight">vi.useFakeTimers</span>模拟时间流逝
+                                </div>
+                            </div>
+                            <div class="step-item">
+                                <span class="step-bullet">•</span>
+                                <div class="step-text">
+                                    验证<span class="highlight">错误处理</span>逻辑，确保异常情况被正确处理
+                                </div>
+                            </div>
+                        </div>
+                        <div class="exercise-tips">
+                            <i class="material-icons">lightbulb</i>
+                            <div class="exercise-tips-text">提示：使用async/await语法处理异步测试，使用rejects/throws验证错误</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="exercise-card">
+                    <div class="exercise-number">3</div>
+                    <div class="exercise-content">
+                        <h3 class="exercise-title">
+                            <i class="material-icons">widgets</i>
+                            组件测试实践
+                        </h3>
+                        <p class="exercise-desc">
+                            为Vue或React组件编写测试，验证组件渲染、交互和状态变化
+                        </p>
+                        <div class="exercise-steps">
+                            <div class="step-item">
+                                <span class="step-bullet">•</span>
+                                <div class="step-text">
+                                    测试<span class="highlight">表单组件</span>的输入验证和提交功能
+                                </div>
+                            </div>
+                            <div class="step-item">
+                                <span class="step-bullet">•</span>
+                                <div class="step-text">
+                                    测试<span class="highlight">列表组件</span>的数据渲染和交互功能
+                                </div>
+                            </div>
+                            <div class="step-item">
+                                <span class="step-bullet">•</span>
+                                <div class="step-text">
+                                    使用<span class="highlight">快照测试</span>验证组件UI的一致性
+                                </div>
+                            </div>
+                        </div>
+                        <div class="exercise-tips">
+                            <i class="material-icons">lightbulb</i>
+                            <div class="exercise-tips-text">提示：使用相应的测试库（Vue Test Utils或React Testing Library）辅助组件测试</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
