@@ -1,0 +1,17 @@
+{
+    "configurations": [
+        {
+            "name": "Python 调试程序: HTML转PPT",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/main.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--input_path",
+                "${workspaceFolder}/input/file_19.html",
+                "--output_dir",
+                "${workspaceFolder}/output/"
+            ]
+        }
+    ]
+}

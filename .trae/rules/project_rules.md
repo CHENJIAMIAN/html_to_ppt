@@ -1,1 +1,2 @@
 - 代码注释用中文！
+- 验证修复后的代码是否能正常运行时，默认运行python src/main.py --input_path .\input\file_19.html --output_dir output/

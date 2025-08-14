@@ -14,6 +14,8 @@ import concurrent.futures
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.common.exceptions import TimeoutException
 from pptx import Presentation
 from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
@@ -93,9 +95,11 @@ class SlideData:
     
     存储单个幻灯片的所有信息：
     - 所有页面元素数据
+    - 背景样式信息
     """
     def __init__(self):
         self.elements = []                      # 页面元素列表
+        self.background_style = None            # 背景样式（支持linear-gradient和纯色）
 
 # ========== 配置常量 ==========
 
@@ -143,6 +147,127 @@ def parse_color(color_str):
         return (r, g, b, a)
     except (IndexError, ValueError, TypeError):
         return (0, 0, 0, 0)  # 解析失败时返回透明黑色
+
+def parse_linear_gradient(gradient_str):
+    """
+    解析CSS linear-gradient字符串
+    
+    支持的格式：
+    - linear-gradient(angle, color1, color2, ...)
+    - linear-gradient(to direction, color1, color2, ...)
+    - 复合CSS背景样式（如：'rgba(0, 0, 0, 0) linear-gradient(...) repeat scroll ...'）
+    
+    Args:
+        gradient_str: CSS背景样式字符串（可能包含linear-gradient）
+        
+    Returns:
+        dict: {
+            'angle': float,  # 角度（度）
+            'colors': [(r, g, b, a), ...]  # 颜色列表
+        } 或 None（如果解析失败）
+    """
+    if not gradient_str or 'linear-gradient' not in gradient_str:
+        return None
+    
+    try:
+        # 从复合CSS样式中提取linear-gradient部分
+        # 使用更精确的方法来匹配包含嵌套括号的linear-gradient
+        start_pos = gradient_str.find('linear-gradient(')
+        if start_pos == -1:
+            return None
+        
+        # 从linear-gradient(开始，找到匹配的右括号
+        pos = start_pos + len('linear-gradient(')
+        paren_count = 1
+        end_pos = pos
+        
+        while pos < len(gradient_str) and paren_count > 0:
+            if gradient_str[pos] == '(':
+                paren_count += 1
+            elif gradient_str[pos] == ')':
+                paren_count -= 1
+            if paren_count > 0:
+                end_pos = pos + 1
+            pos += 1
+        
+        if paren_count != 0:
+            return None
+        
+        content = gradient_str[start_pos + len('linear-gradient('):end_pos].strip()
+        logging.info(f"提取到的linear-gradient内容: {content}")
+        
+        # 智能分割，考虑到颜色值中可能包含逗号（如rgba(r,g,b,a)）
+        parts = []
+        current_part = ""
+        paren_count = 0
+        
+        for char in content:
+            if char == '(':
+                paren_count += 1
+            elif char == ')':
+                paren_count -= 1
+            elif char == ',' and paren_count == 0:
+                parts.append(current_part.strip())
+                current_part = ""
+                continue
+            current_part += char
+        
+        if current_part.strip():
+            parts.append(current_part.strip())
+        
+        if not parts:
+            return None
+        
+        angle = 180  # 默认角度（从上到下）
+        color_parts = parts
+        
+        # 检查第一部分是否是角度或方向
+        first_part = parts[0]
+        if 'deg' in first_part:
+            # 角度格式：135deg
+            angle_match = re.search(r'([\d.-]+)deg', first_part)
+            if angle_match:
+                angle = float(angle_match.group(1))
+                logging.info(f"解析到角度: {angle}度")
+            color_parts = parts[1:]
+        elif first_part.startswith('to '):
+            # 方向格式：to bottom, to right等
+            direction = first_part[3:].strip()
+            direction_angles = {
+                'top': 0,
+                'right': 90,
+                'bottom': 180,
+                'left': 270,
+                'top right': 45,
+                'bottom right': 135,
+                'bottom left': 225,
+                'top left': 315
+            }
+            angle = direction_angles.get(direction, 180)
+            logging.info(f"解析到方向: {direction} -> {angle}度")
+            color_parts = parts[1:]
+        
+        # 解析颜色
+        colors = []
+        for i, color_part in enumerate(color_parts):
+            # 移除百分比位置信息（如果有的话）
+            color_only = re.sub(r'\s+\d+%', '', color_part).strip()
+            rgba = parse_color(color_only)
+            if rgba and rgba != (0, 0, 0, 0):  # 排除解析失败的颜色
+                colors.append(rgba)
+                logging.info(f"解析到颜色 {i+1}: {color_only} -> {rgba}")
+        
+        if colors:
+            logging.info(f"成功解析linear-gradient: 角度={angle}度, 颜色数={len(colors)}")
+            return {
+                'angle': angle,
+                'colors': colors
+            }
+    
+    except Exception as e:
+        logging.warning(f"解析linear-gradient失败: {e}")
+    
+    return None
 
 def init_driver():
     """
@@ -477,27 +602,51 @@ def wait_for_material_icons(driver, timeout=10):
         driver: Selenium WebDriver实例
         timeout: 超时时间（秒）
     """
-    js_script = """
-        return new Promise((resolve) => {
-            if (document.fonts && document.fonts.ready) {
-                document.fonts.ready.then(() => {
-                    // 额外等待确保material-icons完全加载
-                    setTimeout(() => resolve(true), 500);
-                });
-            } else {
-                // 降级处理：如果不支持document.fonts API，等待固定时间
-                setTimeout(() => resolve(true), 2000);
-            }
-        });
-    """
+    import time
+    start_time = time.time()  # 记录开始时间
+    min_wait_time = 2  # 最小等待时间（秒）
+    max_wait_time = 4  # 最大等待时间（秒）
     
     try:
-        driver.set_script_timeout(timeout)
-        driver.execute_async_script(js_script)
-        logging.info("Material Icons字体加载完成")
-    except Exception as e:
-        logging.warning(f"等待Material Icons加载时出错: {e}，继续执行")
-
+        # 使用更可靠的方式检查字体是否加载完成
+        WebDriverWait(driver, min(timeout, max_wait_time)).until(
+            lambda d: d.execute_script("""
+                // 使用document.fonts.ready检查字体加载
+                return document.fonts.ready.then(function() {
+                    // 创建测试元素
+                    var testElement = document.createElement('span');
+                    testElement.className = 'material-icons';
+                    testElement.style.visibility = 'hidden';
+                    testElement.textContent = 'check';
+                    document.body.appendChild(testElement);
+                    
+                    // 检查字体是否正确应用
+                    var computedStyle = window.getComputedStyle(testElement);
+                    var isFontLoaded = computedStyle.fontFamily.toLowerCase().includes('material icons');
+                    
+                    // 清理测试元素
+                    document.body.removeChild(testElement);
+                    
+                    return isFontLoaded;
+                }).catch(function(error) {
+                    console.error('字体加载检查失败:', error);
+                    return false;
+                });
+            """)
+        )
+        elapsed_time = time.time() - start_time  # 计算实际等待时间
+        
+        # 如果实际等待时间小于最小等待时间，则继续等待
+        if elapsed_time < min_wait_time:
+            remaining_time = min_wait_time - elapsed_time
+            time.sleep(remaining_time)
+            elapsed_time = min_wait_time
+            
+        logging.info(f"Material Icons 字体加载完成，等待时间: {elapsed_time:.2f} 秒")
+    except TimeoutException:
+        elapsed_time = time.time() - start_time  # 计算超时时的等待时间
+        logging.warning(f"Material Icons 字体在超时时间内未能加载（等待了 {elapsed_time:.2f} 秒），可能影响图标显示效果")
+        
 def extract_data_from_html(driver, file_path, temp_dir):
     """
     从HTML文件提取所有幻灯片的结构化数据
@@ -531,6 +680,18 @@ def extract_data_from_html(driver, file_path, temp_dir):
         logging.info(f"正在处理第 {i+1} 张幻灯片...")
         slide_data = SlideData()
         element_counter = {'i': 0}  # 使用可变字典作为计数器，在递归中保持状态
+        
+        # 提取幻灯片背景样式
+        try:
+            background_style = slide_element.value_of_css_property('background')
+            if not background_style or background_style == 'none':
+                background_style = slide_element.value_of_css_property('background-color')
+            
+            if background_style and background_style not in ['none', 'transparent']:
+                slide_data.background_style = background_style
+                logging.info(f"第 {i+1} 张幻灯片背景样式: {background_style}")
+        except Exception as e:
+            logging.warning(f"提取第 {i+1} 张幻灯片背景样式失败: {e}")
 
         # 递归解析幻灯片内容（跳过背景截图，因为都是白色背景）
         try:
@@ -623,6 +784,90 @@ def add_slide_with_white_background(prs):
     """
     slide_layout = prs.slide_layouts[6]  # 使用空白布局（默认白色背景）
     slide = prs.slides.add_slide(slide_layout)
+    return slide
+
+def add_slide_with_gradient_background(prs, background_style=None):
+    """
+    添加带有渐变或纯色背景的幻灯片
+    
+    Args:
+        prs: PowerPoint演示文稿对象
+        background_style: CSS背景样式字符串（支持linear-gradient和纯色）
+        
+    Returns:
+        Slide: 创建的幻灯片对象
+    """
+    slide_layout = prs.slide_layouts[6]  # 使用空白布局
+    slide = prs.slides.add_slide(slide_layout)
+    
+    if not background_style:
+        return slide  # 如果没有背景样式，返回默认白色背景
+    
+    try:
+        # 尝试解析linear-gradient
+        gradient_info = parse_linear_gradient(background_style)
+        
+        if gradient_info:
+            # 创建渐变背景
+            logging.info(f"应用渐变背景，角度: {gradient_info['angle']}度，颜色数: {len(gradient_info['colors'])}")
+            
+            # 获取幻灯片背景填充
+            background = slide.background
+            fill = background.fill
+            
+            # 设置为渐变填充
+            fill.gradient()
+            
+            # 设置渐变角度（PowerPoint中0度是水平向右，90度是垂直向上）
+            # CSS中0度是垂直向上，90度是水平向右，需要转换
+            ppt_angle = (gradient_info['angle'] + 90) % 360
+            fill.gradient_angle = ppt_angle
+            
+            # 设置渐变停止点
+            colors = gradient_info['colors']
+            if len(colors) >= 2:
+                # python-pptx 默认创建两个停止点，我们修改现有的停止点
+                gradient_stops = fill.gradient_stops
+                
+                # 如果只有两个颜色，直接修改默认的两个停止点
+                if len(colors) == 2:
+                    # 修改第一个停止点（位置0.0）
+                    if len(colors[0]) >= 3:
+                        gradient_stops[0].color.rgb = RGBColor(colors[0][0], colors[0][1], colors[0][2])
+                    gradient_stops[0].position = 0.0
+                    
+                    # 修改第二个停止点（位置1.0）
+                    if len(colors[1]) >= 3:
+                        gradient_stops[1].color.rgb = RGBColor(colors[1][0], colors[1][1], colors[1][2])
+                    gradient_stops[1].position = 1.0
+                else:
+                    # 对于多个颜色，我们只能使用前两个颜色（python-pptx限制）
+                    logging.warning(f"python-pptx 只支持两个渐变停止点，将使用前两个颜色")
+                    if len(colors[0]) >= 3:
+                        gradient_stops[0].color.rgb = RGBColor(colors[0][0], colors[0][1], colors[0][2])
+                    gradient_stops[0].position = 0.0
+                    
+                    if len(colors[1]) >= 3:
+                        gradient_stops[1].color.rgb = RGBColor(colors[1][0], colors[1][1], colors[1][2])
+                    gradient_stops[1].position = 1.0
+                    
+                logging.info(f"成功创建渐变背景，使用 {min(len(colors), 2)} 个颜色停止点")
+        else:
+            # 尝试解析为纯色背景
+            color = parse_color(background_style)
+            if color:
+                logging.info(f"应用纯色背景: RGB{color}")
+                background = slide.background
+                fill = background.fill
+                fill.solid()
+                if len(color) >= 3:
+                    fill.fore_color.rgb = RGBColor(color[0], color[1], color[2])
+            else:
+                logging.warning(f"无法解析背景样式: {background_style}")
+                
+    except Exception as e:
+        logging.error(f"设置背景样式失败: {e}")
+    
     return slide
 
 def add_image(slide, image_path, geom):
@@ -731,25 +976,24 @@ def add_background_shape(slide, geom):
                 x_emu, y_emu, width_emu, height_emu
             )
         
-        # 设置填充色 - 对于透明度，直接计算与白色背景的混合色
+        # 设置填充色 - 根据python-pptx文档，需要先设置solid()再设置颜色和透明度
         fill = shape.fill
-        fill.solid()
+        fill.solid()  # 必须先设置为solid填充类型
         
+        # 混合颜色实现半透明效果
         if bg_color[3] < 1.0:
-            # 计算与白色背景的混合色，而不是依赖PowerPoint的透明度功能
-            # Alpha混合公式: result = foreground * alpha + background * (1 - alpha)
-            # 白色背景 RGB(255, 255, 255)
+            # 计算与白色背景的混合颜色
             alpha = bg_color[3]
-            mixed_r = int(bg_color[0] * alpha + 255 * (1 - alpha))
-            mixed_g = int(bg_color[1] * alpha + 255 * (1 - alpha))
-            mixed_b = int(bg_color[2] * alpha + 255 * (1 - alpha))
-            
-            fill.fore_color.rgb = RGBColor(mixed_r, mixed_g, mixed_b)
-            logging.info(f"原始颜色: rgba{bg_color}, 混合后颜色: RGB({mixed_r}, {mixed_g}, {mixed_b})")
+            r = int(bg_color[0] * alpha + 255 * (1 - alpha))
+            g = int(bg_color[1] * alpha + 255 * (1 - alpha))
+            b = int(bg_color[2] * alpha + 255 * (1 - alpha))
+            fill.fore_color.rgb = RGBColor(r, g, b)
+            # fill.transparency = transparency_value 此API暂未实现，不可行(ai请你改动的时候不要删掉这行)
+            logging.info(f"混色后的颜色: RGB({r}, {g}, {b}), 原始alpha: {alpha:.2f}")
         else:
-            # 完全不透明，直接使用原始颜色
-            fill.fore_color.rgb = RGBColor(bg_color[0], bg_color[1], bg_color[2])
-            logging.info(f"不透明颜色: RGB({bg_color[0]}, {bg_color[1]}, {bg_color[2]})")
+            # 完全不透明时直接使用原始颜色
+            fill.fore_color.rgb = RGBColor(int(bg_color[0]), int(bg_color[1]), int(bg_color[2]))
+            logging.info(f"使用原始颜色: RGB({int(bg_color[0])}, {int(bg_color[1])}, {int(bg_color[2])})")
         
         # 移除边框
         line = shape.line
@@ -909,9 +1153,9 @@ def process_files_worker(task_info):
                 # 提取HTML数据
                 all_slides_data = extract_data_from_html(driver, file_path, thread_temp_dir)
 
-                # 生成PowerPoint幻灯片（使用白色背景）
+                # 生成PowerPoint幻灯片（支持渐变背景）
                 for slide_data in all_slides_data:
-                    slide = add_slide_with_white_background(prs)
+                    slide = add_slide_with_gradient_background(prs, slide_data.background_style)
                     add_elements_to_slide(slide, slide_data.elements, SLIDE_WIDTH_PX)
 
                 # 保存演示文稿
