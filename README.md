@@ -1,0 +1,1 @@
+python src/main.py --input_path input/file_9.html --output_dir output/
