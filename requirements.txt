@@ -1,6 +1,12 @@
-python-pptx
-selenium
-webdriver-manager
-beautifulsoup4
-lxml
-pillow
+# HTML转PowerPoint转换器依赖项
+# 核心依赖
+python-pptx>=0.6.21,<1.0.0
+selenium>=4.0.0,<5.0.0
+webdriver-manager>=3.8.0,<4.0.0
+
+# HTML解析
+beautifulsoup4>=4.11.0,<5.0.0
+lxml>=4.9.0,<5.0.0
+
+# 图像处理
+pillow>=9.0.0,<12.0.0

@@ -22,6 +22,48 @@ import logging
 import argparse
 import shutil
 import re
+import multiprocessing
+import psutil
+
+# ========== 性能优化配置 ==========
+
+def get_optimal_worker_count():
+    """
+    自动检测最优的工作线程数
+    
+    考虑因素：
+    - CPU逻辑核心数
+    - 可用内存
+    - I/O密集型任务特性
+    
+    Returns:
+        int: 推荐的工作线程数
+    """
+    try:
+        # 获取CPU逻辑核心数
+        cpu_count = multiprocessing.cpu_count()
+        
+        # 获取可用内存（GB）
+        available_memory_gb = psutil.virtual_memory().available / (1024**3)
+        
+        # 对于I/O密集型任务（WebDriver + 文件操作），可以使用更多线程
+        # 但需要考虑内存限制，每个WebDriver实例大约需要200-500MB内存
+        memory_limited_workers = max(1, int(available_memory_gb / 0.5))  # 每个worker预留500MB
+        
+        # 对于WebDriver这种I/O密集型任务，可以使用CPU核心数的1.5-2倍
+        cpu_optimal_workers = min(cpu_count * 2, 16)  # 最多不超过16个线程避免过度竞争
+        
+        # 取两者的最小值，确保系统稳定
+        optimal_workers = min(memory_limited_workers, cpu_optimal_workers)
+        
+        logging.info(f"系统检测: CPU核心数={cpu_count}, 可用内存={available_memory_gb:.1f}GB")
+        logging.info(f"推荐线程数: {optimal_workers} (内存限制={memory_limited_workers}, CPU优化={cpu_optimal_workers})")
+        
+        return max(1, optimal_workers)  # 至少使用1个线程
+        
+    except Exception as e:
+        logging.warning(f"自动检测线程数失败，使用默认值: {e}")
+        return multiprocessing.cpu_count()  # 回退到CPU核心数
 
 # ========== 数据结构定义 ==========
 
@@ -110,11 +152,14 @@ def init_driver():
     - 固定窗口尺寸（1280x720）
     - 隐藏滚动条
     - 无头模式运行（提高性能）
-    - 直接使用本地ChromeDriver路径，跳过版本检查
+    - 优先使用指定的ChromeDriver路径，失败时自动管理ChromeDriver版本
     
     Returns:
         webdriver.Chrome: 配置好的Chrome WebDriver实例
     """
+    from webdriver_manager.chrome import ChromeDriverManager
+    import os
+    
     options = webdriver.ChromeOptions()
     options.add_argument("--window-size=1280,720")  # 设置浏览器窗口尺寸
     options.add_argument("--hide-scrollbars")       # 隐藏滚动条
@@ -126,14 +171,26 @@ def init_driver():
     options.add_argument("--no-sandbox")            # 提高兼容性
     options.add_argument("--disable-dev-shm-usage") # 避免内存问题
     
-    # 直接使用本地ChromeDriver路径，跳过版本检查和下载
+    # 优先使用指定的ChromeDriver路径
     chromedriver_path = r"C:\Users\Administrator\.wdm\drivers\chromedriver\win64\138.0.7204.183\chromedriver-win32\chromedriver.exe"
     
-    service = Service(chromedriver_path)
-    driver = webdriver.Chrome(service=service, options=options)
-    
-    logging.info("WebDriver已初始化（无头模式，使用本地ChromeDriver）")
-    return driver
+    try:
+        # 检查指定路径是否存在
+        if os.path.exists(chromedriver_path):
+            service = Service(chromedriver_path)
+            driver = webdriver.Chrome(service=service, options=options)
+            logging.info(f"WebDriver已初始化（使用指定路径: {chromedriver_path}）")
+            return driver
+        else:
+            logging.warning(f"指定的ChromeDriver路径不存在: {chromedriver_path}，回退到自动管理模式")
+            raise FileNotFoundError("指定路径不存在")
+    except Exception as e:
+        logging.warning(f"使用指定ChromeDriver路径失败: {e}，回退到自动管理模式")
+        # 回退到webdriver-manager自动管理ChromeDriver
+        service = Service(ChromeDriverManager().install())
+        driver = webdriver.Chrome(service=service, options=options)
+        logging.info("WebDriver已初始化（无头模式，自动管理ChromeDriver）")
+        return driver
 
 def take_icon_screenshot(driver, icon_element, temp_dir, slide_index, element_index, slide_element=None):
     """
@@ -305,9 +362,7 @@ def parse_element_recursively(driver, element, temp_dir, slide_index, element_co
     try:
         data.tag_name = element.tag_name
         data.classes = element.get_attribute('class').split() if element.get_attribute('class') else []
-        print(f"🔍 解析元素: <{data.tag_name}> 类名: {data.classes}")
     except Exception:
-        print("❌ 无法获取元素基本属性")
         return None
 
     # 获取元素几何信息和样式属性
@@ -316,7 +371,6 @@ def parse_element_recursively(driver, element, temp_dir, slide_index, element_co
         size = element.size
         # 跳过不可见元素
         if size['width'] == 0 or size['height'] == 0:
-             print(f"⚠️  跳过不可见元素: 尺寸 {size['width']}x{size['height']}")
              return None
              
         data.geom = {
@@ -332,30 +386,17 @@ def parse_element_recursively(driver, element, temp_dir, slide_index, element_co
             'border-radius': element.value_of_css_property('border-radius'),
             'box-shadow': element.value_of_css_property('box-shadow')
         }
-        print(f"📐 几何信息: 位置({location['x']}, {location['y']}) 尺寸({size['width']}x{size['height']})")
-        print(f"🎨 样式信息: 字体大小={data.geom['font-size']} 颜色={data.geom['color']} 背景色={data.geom['background-color']}")
     except Exception:
-        print("❌ 无法获取元素几何信息")
         return None  # 元素不可见或无法交互
 
     # 图标元素特殊处理：拍摄高分辨率截图后直接返回（图标是叶子节点）
     if any(cls in ICON_CLASSES for cls in data.classes):
-        print(f"🎯 发现图标元素: {data.classes}")
         data.icon_path = take_icon_screenshot(driver, element, temp_dir, slide_index, element_counter['i'], slide_element)
-        if data.icon_path:
-            print(f"📸 图标截图成功: {data.icon_path}")
-        else:
-            print("❌ 图标截图失败")
         return data
 
     # code-block元素特殊处理：直接截图，不解析内部结构
     if 'code-block' in data.classes:
-        print(f"💻 发现code-block元素: {data.classes}")
         data.icon_path = take_code_block_screenshot(driver, element, temp_dir, slide_index, element_counter['i'], slide_element)
-        if data.icon_path:
-            print(f"📸 code-block截图成功: {data.icon_path}")
-        else:
-            print("❌ code-block截图失败")
         return data
 
     # 提取文本内容
@@ -391,11 +432,7 @@ def parse_element_recursively(driver, element, temp_dir, slide_index, element_co
         text = driver.execute_script(js_get_text, element)
         if text:
             data.text = text
-            print(f"📝 提取文本: '{text}'")
-        else:
-            print("📝 无文本内容")
     except Exception as e:
-        print(f"❌ 无法提取文本: {e}")
         logging.warning(f"无法从元素提取文本: {e}")
 
     # 处理背景色信息
@@ -406,38 +443,27 @@ def parse_element_recursively(driver, element, temp_dir, slide_index, element_co
         # 对于rgba(211, 47, 47, 0.05)这样的低透明度背景也要正确处理
         data.has_background = bg_color[3] > 0 and bg_color != parent_bg_color
         if data.has_background:
-            print(f"🎨 元素有背景色: rgba{bg_color} 位置({data.geom['x']}, {data.geom['y']}) 尺寸({data.geom['width']}x{data.geom['height']})")
             logging.info(f"元素有背景色: rgba{bg_color} 位置({data.geom['x']}, {data.geom['y']}) 尺寸({data.geom['width']}x{data.geom['height']})")
-        else:
-            print(f"🔍 无有效背景色: {bg_color_str} -> rgba{bg_color}")
     except Exception:
         data.has_background = False
-        print("❌ 无法处理背景色信息")
 
     # 递归解析子元素
     child_elements = element.find_elements(By.XPATH, "./*")
-    print(f"👶 发现 {len(child_elements)} 个子元素")
     current_bg_for_children = parse_color(data.geom.get('background-color', '')) if data.has_background else parent_bg_color
     
-    for i, child_element in enumerate(child_elements):
+    for child_element in child_elements:
         element_counter['i'] += 1
-        print(f"  └─ 处理第 {i+1}/{len(child_elements)} 个子元素 (总计第{element_counter['i']}个)")
         child_data = parse_element_recursively(
             driver, child_element, temp_dir, slide_index, element_counter, 
             parent_bg_color=current_bg_for_children, slide_element=slide_element
         )
         if child_data:
             data.children.append(child_data)
-            print(f"  ✅ 子元素解析成功")
-        else:
-            print(f"  ❌ 子元素解析失败或被跳过")
 
     # 数据剪枝：如果元素没有任何有用内容，则不返回
     if not data.text and not data.icon_path and not data.has_background and not data.children:
-        print("🗑️  元素无有用内容，被剪枝")
         return None
 
-    print(f"✅ 元素解析完成: 文本={bool(data.text)} 图标={bool(data.icon_path)} 背景={data.has_background} 子元素={len(data.children)}")
     return data
 
 
@@ -864,31 +890,25 @@ def process_files_worker(task_info):
         return  # 如果没有分配文件，直接返回
 
     logging.info(f"工作线程启动，分配到 {len(files_chunk)} 个文件")
-    print(f"\n🚀 开始处理文件: {files_chunk}")
     driver = None
     try:
         driver = init_driver()
         for html_file in files_chunk:
             try:
-                print(f"\n📄 开始处理文件: {html_file}")
                 logging.info(f"--- 正在处理文件: {html_file} ---")
 
                 # 每个线程使用独立的临时子目录，避免文件冲突
                 thread_temp_dir = os.path.join(temp_dir, re.sub(r'[^a-zA-Z0-9.-]', '_', html_file))
                 if not os.path.exists(thread_temp_dir):
                     os.makedirs(thread_temp_dir)
-                print(f"📁 临时目录: {thread_temp_dir}")
 
                 # 为每个文件创建新的演示文稿
                 prs = create_presentation()
 
                 file_path = os.path.join(input_dir, html_file)
-                print(f"🔍 开始提取HTML数据: {file_path}")
                 # 提取HTML数据
                 all_slides_data = extract_data_from_html(driver, file_path, thread_temp_dir)
-                print(f"✅ 提取完成，共找到 {len(all_slides_data)} 张幻灯片")
 
-                print(f"🎨 开始生成PowerPoint幻灯片...")
                 # 生成PowerPoint幻灯片（使用白色背景）
                 for slide_data in all_slides_data:
                     slide = add_slide_with_white_background(prs)
@@ -897,9 +917,7 @@ def process_files_worker(task_info):
                 # 保存演示文稿
                 base_name = os.path.splitext(html_file)[0]
                 output_path = os.path.join(output_dir, f"{base_name}.pptx")
-                print(f"💾 保存PowerPoint文件: {output_path}")
                 prs.save(output_path)
-                print(f"✅ 成功创建 {output_path}")
                 logging.info(f"成功创建 {output_path}")
                 
             except Exception as e:
@@ -910,7 +928,6 @@ def process_files_worker(task_info):
         logging.critical(f"工作线程发生致命错误: {e}", exc_info=True)
     finally:
         if driver:
-            print("🔒 关闭浏览器...")
             driver.quit()
             logging.info("工作线程完成，WebDriver已关闭")
 
@@ -926,8 +943,8 @@ def main():
                        help='输入HTML文件路径或包含HTML文件的目录路径')
     parser.add_argument('--output_dir', type=str, required=True, 
                        help='生成的PPTX文件输出目录')
-    parser.add_argument('--workers', type=int, default=2, 
-                       help='并行转换使用的线程数，默认为2')
+    parser.add_argument('--workers', type=int, default=None, 
+                       help='并行转换使用的线程数，默认自动检测最优值')
     args = parser.parse_args()
 
     # 配置日志
@@ -936,12 +953,15 @@ def main():
         format='%(asctime)s - %(threadName)s - %(levelname)s - %(message)s'
     )
     
-    # 优化模式提示
-    print("=" * 60)
-    print("🚀 HTML转PowerPoint转换器")
-    print("- 使用直接背景形状生成，提高转换效率")
-    print("- 保持高质量图标截图")
-    print("=" * 60)
+    # 启动信息
+    logging.info("HTML转PowerPoint转换器启动")
+    
+    # 自动检测最优线程数（如果用户未指定）
+    if args.workers is None:
+        args.workers = get_optimal_worker_count()
+        logging.info(f"自动检测到最优线程数: {args.workers}")
+    else:
+        logging.info(f"用户指定线程数: {args.workers}")
     
     input_path = args.input_path
     output_dir = args.output_dir
