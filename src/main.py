@@ -10,7 +10,11 @@ HTML转PowerPoint演示文稿转换器
 
 import os
 import time
+import base64
+import urllib.request
 import concurrent.futures
+from urllib.parse import unquote, urlparse
+from urllib.request import url2pathname
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
@@ -86,6 +90,8 @@ class ElementData:
         self.text = None                        # 元素文本内容
         self.geom = None                        # 几何和样式信息
         self.icon_path = None                   # 图标截图路径
+        self.image_path = None                  # <img> 元素的截图路径
+        self.background_image = None            # 元素级 CSS 背景图（已落地为本地文件）
         self.has_background = False             # 是否有有效背景色
         self.children = []                      # 子元素列表
 
@@ -100,6 +106,7 @@ class SlideData:
     def __init__(self):
         self.elements = []                      # 页面元素列表
         self.background_style = None            # 背景样式（支持linear-gradient和纯色）
+        self.background_image = None            # 幻灯片背景图（已落地为本地文件）
 
 # ========== 配置常量 ==========
 
@@ -462,6 +469,148 @@ def take_code_block_screenshot(driver, code_element, temp_dir, slide_index, elem
             except Exception as e:
                 logging.warning(f"无法恢复slide元素位置: {e}")
 
+# ========== 图片资源落地 ==========
+
+def materialize_image_source(url, temp_dir, name):
+    """
+    把 CSS 里的图片地址落地成本地文件。
+
+    支持 data URI（base64）、file:// 本地文件和 http(s) 远程图片。
+    落地失败返回 None，调用方按「没有图片」处理，不影响其余元素。
+
+    Args:
+        url: CSS 里拿到的图片地址
+        temp_dir: 临时文件目录
+        name: 落地文件的基础名
+
+    Returns:
+        str: 本地图片路径，失败时返回 None
+    """
+    if not url:
+        return None
+    url = str(url).strip().strip('"\'')
+    if not url or url == 'none':
+        return None
+
+    # data URI：直接解码写文件
+    match = re.match(r'^data:image/([a-zA-Z0-9.+-]+);base64,(.*)$', url, re.S)
+    if match:
+        ext = match.group(1).split('+')[0].lower()
+        ext = 'jpg' if ext in ('jpeg', 'jpg') else ext
+        path = os.path.join(temp_dir, f"{name}.{ext}")
+        try:
+            with open(path, 'wb') as fp:
+                fp.write(base64.b64decode(match.group(2)))
+            return path
+        except Exception as e:
+            logging.warning(f"解码 data URI 图片失败: {e}")
+            return None
+
+    # file:// 本地文件：直接复用原文件
+    if url.startswith('file:'):
+        try:
+            path = url2pathname(unquote(urlparse(url).path))
+            return path if os.path.exists(path) else None
+        except Exception as e:
+            logging.warning(f"解析本地图片路径失败: {e}")
+            return None
+
+    # 远程图片：下载到临时目录
+    if url.startswith(('http://', 'https://')):
+        path = os.path.join(temp_dir, f"{name}.img")
+        try:
+            with urllib.request.urlopen(url, timeout=10) as response, open(path, 'wb') as fp:
+                fp.write(response.read())
+            return path
+        except Exception as e:
+            logging.warning(f"下载远程图片失败 {url}: {e}")
+            return None
+
+    # 相对路径：按当前工作目录解析
+    try:
+        candidate = os.path.abspath(url)
+        return candidate if os.path.exists(candidate) else None
+    except Exception:
+        return None
+
+
+def extract_background_image_url(element):
+    """
+    读取元素计算后的 background-image，取出第一个 url(...) 里的地址。
+
+    computed style 里的相对路径已经被浏览器解析成绝对 URL，这里只管取地址。
+    """
+    try:
+        value = element.value_of_css_property('background-image')
+    except Exception:
+        return None
+    if not value or value == 'none':
+        return None
+    match = re.search(r'url\(([^)]*)\)', value)
+    return match.group(1).strip('"\'') if match else None
+
+
+def crop_image_to_cover(image_path, target_width, target_height, out_path):
+    """
+    按 background-size: cover 的语义裁剪图片：铺满目标框，多出来的部分居中裁掉。
+
+    裁剪失败时返回原图，宁可拉伸也不丢图。
+    """
+    try:
+        with Image.open(image_path) as img:
+            img = img.convert('RGBA')
+            src_width, src_height = img.size
+            if src_width <= 0 or src_height <= 0 or target_width <= 0 or target_height <= 0:
+                return image_path
+            target_ratio = target_width / target_height
+            src_ratio = src_width / src_height
+            if abs(src_ratio - target_ratio) < 0.01:
+                return image_path
+            if src_ratio > target_ratio:
+                crop_width = int(src_height * target_ratio)
+                left = (src_width - crop_width) // 2
+                box = (left, 0, left + crop_width, src_height)
+            else:
+                crop_height = int(src_width / target_ratio)
+                top = (src_height - crop_height) // 2
+                box = (0, top, src_width, top + crop_height)
+            img.crop(box).save(out_path)
+            return out_path
+    except Exception as e:
+        logging.warning(f"背景图裁剪失败，按原图拉伸: {e}")
+        return image_path
+
+
+def take_image_screenshot(driver, element, temp_dir, slide_index, element_index):
+    """
+    截取 <img> 元素当前渲染出来的样子。
+
+    用截图而不是直接拷 src，是为了把 object-fit、圆角、透明等 CSS 效果一起保留。
+
+    Returns:
+        str: 截图文件路径，失败时返回 None
+    """
+    image_path = os.path.join(temp_dir, f"slide_{slide_index}_element_{element_index}_image.png")
+    try:
+        # 懒加载的图片要等它真正解码完，否则截到的是一片空白
+        WebDriverWait(driver, 5).until(
+            lambda d: d.execute_script(
+                "const el = arguments[0]; return el.complete === true && (el.naturalWidth || 0) > 0;",
+                element,
+            )
+        )
+    except TimeoutException:
+        logging.warning(f"幻灯片{slide_index}的图片在超时内未加载完成，仍尝试截图")
+
+    try:
+        time.sleep(0.1)  # 等渲染稳定
+        element.screenshot(image_path)
+        return image_path if os.path.exists(image_path) else None
+    except Exception as e:
+        logging.error(f"图片元素截图失败: {e}")
+        return None
+
+
 def parse_element_recursively(driver, element, temp_dir, slide_index, element_counter, parent_bg_color=None, slide_element=None):
     """
     递归解析HTML元素及其子元素
@@ -519,6 +668,11 @@ def parse_element_recursively(driver, element, temp_dir, slide_index, element_co
         data.icon_path = take_icon_screenshot(driver, element, temp_dir, slide_index, element_counter['i'], slide_element)
         return data
 
+    # <img> 元素：截图后当作图片插入（图片没有文本，不递归子节点）
+    if str(data.tag_name).lower() == 'img':
+        data.image_path = take_image_screenshot(driver, element, temp_dir, slide_index, element_counter['i'])
+        return data
+
     # code-block元素特殊处理：直接截图，不解析内部结构
     if 'code-block' in data.classes:
         data.icon_path = take_code_block_screenshot(driver, element, temp_dir, slide_index, element_counter['i'], slide_element)
@@ -572,6 +726,16 @@ def parse_element_recursively(driver, element, temp_dir, slide_index, element_co
     except Exception:
         data.has_background = False
 
+    # 元素级背景图：落地成本地文件，生成 PPT 时铺在该元素的背景层
+    try:
+        background_image_url = extract_background_image_url(element)
+        if background_image_url:
+            data.background_image = materialize_image_source(
+                background_image_url, temp_dir, f"slide_{slide_index}_element_{element_counter['i']}_bg"
+            )
+    except Exception as e:
+        logging.warning(f"提取元素背景图失败: {e}")
+
     # 递归解析子元素
     child_elements = element.find_elements(By.XPATH, "./*")
     current_bg_for_children = parse_color(data.geom.get('background-color', '')) if data.has_background else parent_bg_color
@@ -586,7 +750,8 @@ def parse_element_recursively(driver, element, temp_dir, slide_index, element_co
             data.children.append(child_data)
 
     # 数据剪枝：如果元素没有任何有用内容，则不返回
-    if not data.text and not data.icon_path and not data.has_background and not data.children:
+    if not data.text and not data.icon_path and not data.image_path and not data.background_image \
+            and not data.has_background and not data.children:
         return None
 
     return data
@@ -693,6 +858,18 @@ def extract_data_from_html(driver, file_path, temp_dir):
         except Exception as e:
             logging.warning(f"提取第 {i+1} 张幻灯片背景样式失败: {e}")
 
+        # 幻灯片背景图（CSS background-image）
+        try:
+            background_image_url = extract_background_image_url(slide_element)
+            if background_image_url:
+                slide_data.background_image = materialize_image_source(
+                    background_image_url, temp_dir, f"slide_{i+1}_background"
+                )
+                if slide_data.background_image:
+                    logging.info(f"第 {i+1} 张幻灯片背景图: {slide_data.background_image}")
+        except Exception as e:
+            logging.warning(f"提取第 {i+1} 张幻灯片背景图失败: {e}")
+
         # 递归解析幻灯片内容（跳过背景截图，因为都是白色背景）
         try:
             # 查找并处理所有主要容器：slide-header 和 slide-content
@@ -786,20 +963,36 @@ def add_slide_with_white_background(prs):
     slide = prs.slides.add_slide(slide_layout)
     return slide
 
-def add_slide_with_gradient_background(prs, background_style=None):
+def add_slide_with_gradient_background(prs, background_style=None, background_image=None):
     """
-    添加带有渐变或纯色背景的幻灯片
+    添加带有渐变、纯色或图片背景的幻灯片
     
     Args:
         prs: PowerPoint演示文稿对象
         background_style: CSS背景样式字符串（支持linear-gradient和纯色）
+        background_image: 已落地的背景图路径（优先于背景色/渐变）
         
     Returns:
         Slide: 创建的幻灯片对象
     """
     slide_layout = prs.slide_layouts[6]  # 使用空白布局
     slide = prs.slides.add_slide(slide_layout)
-    
+
+    # 背景图优先：CSS 里 background-image 是盖在 background-color / gradient 之上的
+    if background_image and os.path.exists(background_image):
+        try:
+            height_px = int(SLIDE_WIDTH_PX * prs.slide_height / prs.slide_width)
+            cropped = os.path.join(os.path.dirname(background_image), 'slide_background_cover.png')
+            source = crop_image_to_cover(background_image, SLIDE_WIDTH_PX, height_px, cropped)
+            picture = slide.shapes.add_picture(source, 0, 0, width=prs.slide_width, height=prs.slide_height)
+            # 压到最底层，免得盖住后面的内容
+            slide.shapes._spTree.remove(picture._element)
+            slide.shapes._spTree.insert(2, picture._element)
+            logging.info(f"应用幻灯片背景图: {background_image}")
+            return slide
+        except Exception as e:
+            logging.error(f"设置幻灯片背景图失败: {e}")
+
     if not background_style:
         return slide  # 如果没有背景样式，返回默认白色背景
     
@@ -869,6 +1062,36 @@ def add_slide_with_gradient_background(prs, background_style=None):
         logging.error(f"设置背景样式失败: {e}")
     
     return slide
+
+def add_background_image(slide, image_path, geom):
+    """
+    把元素的 CSS 背景图铺在元素位置，子元素随后画在它上面。
+
+    Args:
+        slide: 幻灯片对象
+        image_path: 已落地的背景图路径
+        geom: 几何信息字典（包含位置和尺寸）
+    """
+    if not (image_path and os.path.exists(image_path) and geom):
+        return
+
+    try:
+        width_px = float(geom['width'])
+        height_px = float(geom['height'])
+        if width_px <= 0 or height_px <= 0:
+            return
+        cropped = os.path.splitext(image_path)[0] + '_cover.png'
+        source = crop_image_to_cover(image_path, int(width_px), int(height_px), cropped)
+        slide.shapes.add_picture(
+            source,
+            px_to_emu(geom['x']),
+            px_to_emu(geom['y']),
+            width=px_to_emu(width_px),
+            height=px_to_emu(height_px),
+        )
+    except Exception as e:
+        logging.error(f"添加背景图失败 {image_path}: {e}")
+
 
 def add_image(slide, image_path, geom):
     """
@@ -1101,17 +1324,23 @@ def add_elements_to_slide(slide, elements, slide_width_px):
         slide_width_px: 幻灯片宽度（像素）
     """
     for data in elements:
-        # 1. 添加元素背景形状（如果有）
+        # 1. 元素背景图（铺在最下层）
+        if data.background_image:
+            add_background_image(slide, data.background_image, data.geom)
+
+        # 2. 添加元素背景形状（如果有）
         if data.has_background:
             add_background_shape(slide, data.geom)
 
-        # 2. 添加元素内容（图标或文本）
-        if data.icon_path:
+        # 3. 添加元素内容（图片、图标或文本）
+        if data.image_path:
+            add_image(slide, data.image_path, data.geom)
+        elif data.icon_path:
             add_image(slide, data.icon_path, data.geom)
         elif data.text:
             add_textbox(slide, data, slide_width_px)
 
-        # 3. 递归处理子元素
+        # 4. 递归处理子元素
         if data.children:
             add_elements_to_slide(slide, data.children, slide_width_px)
 
@@ -1155,7 +1384,7 @@ def process_files_worker(task_info):
 
                 # 生成PowerPoint幻灯片（支持渐变背景）
                 for slide_data in all_slides_data:
-                    slide = add_slide_with_gradient_background(prs, slide_data.background_style)
+                    slide = add_slide_with_gradient_background(prs, slide_data.background_style, slide_data.background_image)
                     add_elements_to_slide(slide, slide_data.elements, SLIDE_WIDTH_PX)
 
                 # 保存演示文稿

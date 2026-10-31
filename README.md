@@ -101,6 +101,7 @@ python src/main.py --input_path input/ --output_dir output/ --verbose
 - ✅ 阴影效果
 - ✅ 精确定位和尺寸
 - ✅ Material Icons图标
+- ✅ 图片（`<img>` 标签与 CSS `background-image`，支持 data URI、本地文件和 http(s) 远程地址）
 
 ## 常见问题
 
@@ -112,6 +113,9 @@ A: 可以通过 `--workers` 参数增加并行处理的线程数量，建议设�
 
 ### Q: 支持哪些浏览器？
 A: 目前仅支持Chrome/Chromium浏览器，转换器会自动下载和管理ChromeDriver。
+
+### Q: 转换后图片或背景图不显示？
+A: 已支持 `<img>` 标签和 CSS `background-image`（data URI、本地文件、http(s) 远程地址都会落地成本地图片再插入）。如果仍不显示，多半是图片在截图时还没加载完——懒加载图片建议在 HTML 里提前加载，或者把图片直接内联成 data URI。
 
 ## 开发说明
 
