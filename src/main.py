@@ -120,6 +120,7 @@ ICON_CLASSES = {
 
 # 布局配置常量
 SLIDE_WIDTH_PX = 1280                       # 幻灯片宽度（像素）
+SLIDE_HEIGHT_PX = 720                       # 幻灯片高度（像素，16:9）
 
 
 # ========== 核心解析逻辑 ==========
@@ -611,7 +612,7 @@ def take_image_screenshot(driver, element, temp_dir, slide_index, element_index)
         return None
 
 
-def parse_element_recursively(driver, element, temp_dir, slide_index, element_counter, parent_bg_color=None, slide_element=None):
+def parse_element_recursively(driver, element, temp_dir, slide_index, element_counter, parent_bg_color=None, slide_element=None, geometry_transform=None):
     """
     递归解析HTML元素及其子元素
     
@@ -626,6 +627,7 @@ def parse_element_recursively(driver, element, temp_dir, slide_index, element_co
         element_counter: 元素计数器（字典，用于跨递归调用保持状态）
         parent_bg_color: 父元素背景色（用于判断是否需要新背景）
         slide_element: 根级幻灯片元素
+        geometry_transform: 幻灯片原点/缩放/居中偏移，用于把元素坐标换算到标准页面内
         
     Returns:
         ElementData: 解析后的元素数据，解析失败时返回None
@@ -643,6 +645,18 @@ def parse_element_recursively(driver, element, temp_dir, slide_index, element_co
     try:
         location = element.location
         size = element.size
+        # Selenium 给的是相对页面文档的坐标；body 常把 slide 居中，slide 的原点并不在
+        # (0,0)，而 min-height 还可能把它撑得比 720 高，所以这里统一换算到标准页面内
+        if geometry_transform:
+            scale = geometry_transform['scale']
+            location = {
+                'x': (location['x'] - geometry_transform['origin_x']) * scale + geometry_transform['offset_x'],
+                'y': (location['y'] - geometry_transform['origin_y']) * scale + geometry_transform['offset_y'],
+            }
+            size = {
+                'width': size['width'] * scale,
+                'height': size['height'] * scale,
+            }
         # 跳过不可见元素
         if size['width'] == 0 or size['height'] == 0:
              return None
@@ -662,6 +676,14 @@ def parse_element_recursively(driver, element, temp_dir, slide_index, element_co
         }
     except Exception:
         return None  # 元素不可见或无法交互
+
+    # 字号要跟着整体缩放走，否则缩过布局后文字会显得过大
+    if geometry_transform and data.geom and data.geom.get('font-size'):
+        try:
+            font_px = float(str(data.geom['font-size']).replace('px', ''))
+            data.geom['font-size'] = f"{font_px * geometry_transform['scale']:.2f}px"
+        except (ValueError, TypeError):
+            pass
 
     # 图标元素特殊处理：拍摄高分辨率截图后直接返回（图标是叶子节点）
     if any(cls in ICON_CLASSES for cls in data.classes):
@@ -709,7 +731,8 @@ def parse_element_recursively(driver, element, temp_dir, slide_index, element_co
             .join(' ');
         """
         text = driver.execute_script(js_get_text, element)
-        if text:
+        # 纯空白（容器缩进、占位空格）不算内容，否则会给空容器生成越界的空文本框
+        if text and text.strip():
             data.text = text
     except Exception as e:
         logging.warning(f"无法从元素提取文本: {e}")
@@ -744,7 +767,8 @@ def parse_element_recursively(driver, element, temp_dir, slide_index, element_co
         element_counter['i'] += 1
         child_data = parse_element_recursively(
             driver, child_element, temp_dir, slide_index, element_counter, 
-            parent_bg_color=current_bg_for_children, slide_element=slide_element
+            parent_bg_color=current_bg_for_children, slide_element=slide_element,
+            geometry_transform=geometry_transform
         )
         if child_data:
             data.children.append(child_data)
@@ -896,13 +920,37 @@ def extract_data_from_html(driver, file_path, temp_dir):
                 logging.warning(f"第 {i+1} 张幻灯片未找到任何标准容器，从 slide 根元素开始解析")
                 containers_to_process.append(slide_element)
             
+            # 幻灯片在页面里的位置和实际尺寸：body 常把它居中，min-height 还可能让
+            # 它比 720 高，所以既要减原点，也要等比缩放到标准页面内并居中
+            geometry_transform = None
+            try:
+                origin = slide_element.location
+                slide_size = slide_element.size
+                width_px = max(float(slide_size['width']), 1.0)
+                height_px = max(float(slide_size['height']), 1.0)
+                scale = min(SLIDE_WIDTH_PX / width_px, SLIDE_HEIGHT_PX / height_px)
+                geometry_transform = {
+                    'origin_x': origin['x'],
+                    'origin_y': origin['y'],
+                    'scale': scale,
+                    'offset_x': (SLIDE_WIDTH_PX - width_px * scale) / 2.0,
+                    'offset_y': (SLIDE_HEIGHT_PX - height_px * scale) / 2.0,
+                }
+                logging.info(
+                    f"第 {i+1} 张幻灯片实际尺寸 {width_px:.0f}x{height_px:.0f}，"
+                    f"原点 ({origin['x']}, {origin['y']})，缩放 {scale:.3f}"
+                )
+            except Exception as e:
+                logging.warning(f"计算第 {i+1} 张幻灯片几何变换失败: {e}")
+
             # 处理所有找到的容器
             for container in containers_to_process:
                 child_elements = container.find_elements(By.XPATH, "./*")
                 for child in child_elements:
                     element_counter['i'] += 1
                     element_data = parse_element_recursively(
-                        driver, child, temp_dir, i, element_counter, slide_element=slide_element
+                        driver, child, temp_dir, i, element_counter, slide_element=slide_element,
+                        geometry_transform=geometry_transform
                     )
                     if element_data:
                         slide_data.elements.append(element_data)
